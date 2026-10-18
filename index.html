@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formulir Pemesanan Kaos EcoPreneur TechFest 2026</title>
+<style>
+:root{--g:#1f7a4d;--g-dark:#165c3a;--g-soft:#e8f3ec;--ink:#1c2420;--muted:#5d6b63;--line:#d5ddd8;--bg:#f2f6f3;--card:#fff;--err:#b3261e;--r:14px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.banner{max-width:1000px;margin:0 auto;background:#dff0e6}
+.banner img{display:block;width:100%;height:auto}
+.wrap{max-width:640px;margin:0 auto;padding:8px 16px 56px}
+h1{margin:18px 0 6px;font-size:1.6rem;line-height:1.2}
+h2{margin:0 0 6px;font-size:1.15rem}
+h3{margin:18px 0 8px;font-size:1rem}
+p{margin:0 0 10px}
+.lead{margin:16px 2px 4px}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin:14px 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:300px;text-align:center}
+th,td{border:1px solid var(--line);padding:8px 6px}
+th{background:var(--g-soft);color:var(--g-dark)}
+td:first-child{font-weight:700}
+#chart{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:10px;border:1px solid var(--line)}
+.price{list-style:none;margin:0;padding:0}
+.price li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.price li:last-child{border-bottom:0}
+.field{display:block;margin:0 0 14px}
+.field>span{display:block;font-weight:600;margin-bottom:6px}
+.field i,.req{color:var(--err);font-style:normal}
+select,input[type=text],input[type=tel],input[type=number],input[type=file]{width:100%;font:inherit;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+select:disabled{background:#eef1ef;color:var(--muted)}
+select:focus,input:focus{outline:2px solid var(--g);outline-offset:1px;border-color:var(--g)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.item{border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 12px;background:#fafcfb}
+.item-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+button{font:inherit;cursor:pointer}
+.rm{background:none;border:0;color:var(--err);font-weight:600;padding:4px 8px}
+.add{width:100%;background:#fff;color:var(--g-dark);border:1.5px dashed var(--g);border-radius:10px;padding:12px;font-weight:600}
+.total{display:flex;justify-content:space-between;align-items:center;background:var(--g-soft);border-radius:12px;padding:14px;margin-top:14px;font-weight:600}
+.total b{font-size:1.25rem;color:var(--g-dark)}
+.radio{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;cursor:pointer}
+.radio input{margin-top:4px;width:18px;height:18px;accent-color:var(--g)}
+.pay{background:var(--g-soft);border-radius:12px;padding:14px;margin:12px 0}
+.rek{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.rek b{font-size:1.2rem;letter-spacing:.5px}
+.copy{background:#fff;border:1px solid var(--g);color:var(--g-dark);border-radius:8px;padding:6px 12px;font-weight:600}
+.qr{text-align:center}
+.qr img{display:block;max-width:260px;width:100%;height:auto;margin:12px auto 4px;border-radius:10px;background:#fff}
+.submit{width:100%;background:var(--g);color:#fff;border:0;border-radius:12px;padding:15px;font-size:1.05rem;font-weight:700;margin-top:6px}
+.submit:hover{background:var(--g-dark)}
+.submit:disabled{opacity:.6;cursor:wait}
+.alt{width:100%;background:#fff;color:var(--g-dark);border:1.5px solid var(--g);border-radius:12px;padding:13px;font-weight:700;margin-top:10px}
+.err{background:#fdecea;color:var(--err);border:1px solid #f3b9b4;border-radius:10px;padding:12px;margin:12px 0;font-weight:600}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 0}
+.tab{padding:12px 8px;border:1.5px solid var(--g);background:#fff;color:var(--g-dark);border-radius:12px;font-weight:700}
+.tab.on{background:var(--g);color:#fff}
+.ok-icon{width:56px;height:56px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px}
+.done{text-align:center}
+.done .sum{text-align:left;background:#fafcfb;border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0}
+.done .sum div{display:flex;justify-content:space-between;gap:10px;padding:4px 0}
+.done .pay{text-align:left}
+.idp{font-size:1.5rem;font-weight:800;color:var(--g-dark);letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="banner"><img id="banner" src="header.jpg" alt="Formulir Pemesanan Kaos EcoPreneur TechFest 2026, SMA Negeri 15 Bandung"></div>
+
+<div class="wrap">
+  <h1 id="judul" class="sr">Formulir Pemesanan Kaos EcoPreneur TechFest 2026</h1>
+  <p class="lead muted">Mari ambil bagian dalam menyukseskan EcoPreneur TechFest 2026 melalui pemesanan kaos resmi kegiatan.</p>
+
+  <!-- Status memuat -->
+  <section id="muat" class="card">
+    <p id="muatTeks" class="muted" style="margin:0">Memuat formulir…</p>
+    <button type="button" id="muatCoba" class="alt" hidden>Coba lagi</button>
+  </section>
+
+  <!-- Gerbang kode akses: hanya tampil jika panitia mengaktifkan KODE_AKSES di Code.gs -->
+  <section id="gate" class="card" hidden>
+    <h2>Masukkan Kode Akses</h2>
+    <p class="muted">Formulir ini khusus untuk orang tua/wali murid. Kode akses dibagikan oleh panitia melalui grup orang tua.</p>
+    <form id="fg" novalidate autocomplete="off">
+      <label class="field"><span>Kode akses <i>*</i></span>
+        <input id="kode" type="text" autocapitalize="none" autocorrect="off" spellcheck="false">
+      </label>
+      <div id="errG" class="err" role="alert" hidden></div>
+      <button type="submit" id="btnG" class="submit">Masuk</button>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+
+    <section class="card">
+      <h2>Informasi Kaos</h2>
+      <p class="muted">Sebelum melakukan pemesanan, silakan perhatikan informasi ukuran dan harga kaos berikut.</p>
+
+      <h3>Panduan Ukuran</h3>
+      <a id="chartLink" href="panduan-ukuran.jpg" target="_blank" rel="noopener"><img id="chart" src="panduan-ukuran.jpg" alt="Panduan ukuran kaos polo unisex"></a>
+      <p id="chartHint" class="small muted" style="margin-top:8px">Ketuk gambar untuk memperbesar.</p>
+      <div id="tblWrap" class="scroll" hidden>
+        <p class="small muted">Satuan: cm. A: lebar dada &middot; B: panjang baju &middot; C: bahu &middot; D: panjang lengan</p>
+        <table>
+          <thead><tr><th>Ukuran</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead>
+          <tbody>
+            <tr><td>S</td><td>49-50</td><td>66-67</td><td>12</td><td>18</td></tr>
+            <tr><td>M</td><td>51-52</td><td>68-69</td><td>13</td><td>20</td></tr>
+            <tr><td>L</td><td>53-54</td><td>70-71</td><td>13,5</td><td>22</td></tr>
+            <tr><td>XL</td><td>55-56</td><td>72-73</td><td>14</td><td>23</td></tr>
+            <tr><td>XXL</td><td>57</td><td>74-75</td><td>15</td><td>23</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Harga Kaos</h3>
+      <ul class="price">
+        <li><span>Lengan pendek</span><b>Rp100.000/pcs</b></li>
+        <li><span>Lengan panjang</span><b>Rp110.000/pcs</b></li>
+      </ul>
+    </section>
+
+    <div class="tabs" role="tablist">
+      <button type="button" id="tabP" class="tab on" role="tab">Pesan Kaos</button>
+      <button type="button" id="tabB" class="tab" role="tab">Unggah Bukti Bayar</button>
+    </div>
+
+    <!-- Panel: pesan kaos -->
+    <div id="panelP">
+      <form id="f" novalidate autocomplete="off">
+
+        <section class="card">
+          <h2>Identitas Pemesan</h2>
+          <p class="muted small">Tanda <span class="req">*</span> wajib diisi.</p>
+
+          <label class="field"><span>Kelas <i>*</i></span>
+            <select id="kelas"><option value="">Pilih kelas</option></select>
+          </label>
+
+          <label class="field"><span>Nama Lengkap Murid <i>*</i></span>
+            <select id="murid" disabled><option value="">Pilih kelas terlebih dahulu</option></select>
+          </label>
+
+          <label class="field"><span>Nama Lengkap Orang Tua/Wali Murid <i>*</i></span>
+            <input id="ortu" type="text" maxlength="100" autocomplete="name">
+          </label>
+
+          <label class="field"><span>Nomor Handphone <i>*</i></span>
+            <input id="hp" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" autocomplete="tel">
+          </label>
+
+          <div class="hp" aria-hidden="true"><label>Website <input id="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+        </section>
+
+        <section class="card">
+          <h2>Detail Pemesanan Kaos</h2>
+          <p class="muted small">Bisa memesan lebih dari satu ukuran atau model lengan.</p>
+          <div id="items"></div>
+          <button type="button" id="tambah" class="add">+ Tambah ukuran lain</button>
+          <div class="total"><span>Total (<span id="qty">0</span> pcs)</span><b id="total">Rp0</b></div>
+        </section>
+
+        <section class="card">
+          <h2>Informasi dan Konfirmasi Pembayaran</h2>
+          <p class="muted">Terima kasih telah melakukan pemesanan kaos EcoPreneur TechFest 2026.</p>
+
+          <p style="font-weight:600;margin-bottom:8px">Status Pembayaran <span class="req">*</span></p>
+          <label class="radio"><input type="radio" name="bayar" value="Pembayaran menyusul"><span>Pembayaran menyusul</span></label>
+          <label class="radio"><input type="radio" name="bayar" value="Sudah membayar"><span>Sudah membayar</span></label>
+          <p id="hintMenyusul" class="small muted" hidden>Setelah pesanan terkirim, Anda akan mendapat ID pesanan. Bukti bayar bisa diunggah kapan saja lewat tab &ldquo;Unggah Bukti Bayar&rdquo; dengan ID pesanan dan nomor HP yang Anda isi di sini.</p>
+
+          <div class="payslot"></div>
+
+          <div id="buktiBox" hidden>
+            <label class="field"><span>Screenshot Bukti Bayar <i>*</i></span>
+              <input id="bukti" type="file" accept="image/*">
+            </label>
+          </div>
+        </section>
+
+        <div id="err" class="err" role="alert" hidden></div>
+        <button type="submit" id="kirim" class="submit">Kirim Pesanan</button>
+      </form>
+
+      <section id="sukses" class="card done" hidden>
+        <div class="ok-icon">&#10003;</div>
+        <h2>Pesanan berhasil dikirim</h2>
+        <p class="muted">Simpan ID pesanan berikut sebagai rujukan.</p>
+        <div class="idp" id="sId"></div>
+        <div class="sum" id="sSum"></div>
+        <p id="sNote" class="muted"></p>
+        <div id="sPay"></div>
+        <button type="button" id="sUnggah" class="alt" hidden>Unggah bukti bayar sekarang</button>
+      </section>
+    </div>
+
+    <!-- Panel: unggah bukti bayar susulan -->
+    <div id="panelB" hidden>
+      <form id="fb" novalidate autocomplete="off">
+        <section class="card">
+          <h2>Unggah Bukti Bayar</h2>
+          <p class="muted">Untuk pesanan yang status pembayarannya &ldquo;menyusul&rdquo;. Isi ID pesanan (contoh: KS0007) dan nomor HP yang Anda gunakan saat memesan.</p>
+
+          <label class="field"><span>ID Pesanan <i>*</i></span>
+            <input id="bId" type="text" maxlength="12" placeholder="KS0007" autocapitalize="characters" autocomplete="off">
+          </label>
+
+          <label class="field"><span>Nomor Handphone <i>*</i></span>
+            <input id="bHp" type="tel" inputmode="tel" placeholder="08xxxxxxxxxx" autocomplete="tel">
+          </label>
+
+          <div class="hp" aria-hidden="true"><label>Website <input id="bWeb" type="text" tabindex="-1" autocomplete="off"></label></div>
+
+          <div class="payslot"></div>
+
+          <label class="field"><span>Screenshot Bukti Bayar <i>*</i></span>
+            <input id="bFile" type="file" accept="image/*">
+          </label>
+        </section>
+
+        <div id="errB" class="err" role="alert" hidden></div>
+        <button type="submit" id="kirimB" class="submit">Kirim Bukti Bayar</button>
+      </form>
+
+      <section id="suksesB" class="card done" hidden>
+        <div class="ok-icon">&#10003;</div>
+        <h2>Bukti bayar diterima</h2>
+        <div class="idp" id="bSId"></div>
+        <p class="muted" id="bSNote"></p>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<template id="tplPay">
+  <div class="pay">
+    <b>Transfer melalui nomor rekening</b>
+    <div class="rek"><b class="rek-no">8501500102491</b><button type="button" class="copy">Salin</button></div>
+    <div class="muted">BTN a.n. Belladina</div>
+    <p style="margin:14px 0 0"><b>Atau QRIS</b></p>
+    <div class="muted small">EcoPreneur TechFest &middot; NMID: ID1026617266741 &middot; A01</div>
+    <div class="qr">
+      <a href="qris.jpg" target="_blank" rel="noopener"><img src="qris.jpg" alt="QRIS EcoPreneur TechFest" onerror="this.closest('.qr').remove()"></a>
+      <div class="small muted">Ketuk gambar untuk memperbesar atau menyimpannya.</div>
+    </div>
+  </div>
+</template>
+
+<script>
+// ====== PENGATURAN ======
+// Ganti dengan URL Web App Apps Script (berakhiran /exec)
+const API_URL = 'GANTI_DENGAN_URL_WEB_APP';
+// ========================
+
+const HARGA = { 'Lengan pendek': 100000, 'Lengan panjang': 110000 };
+const UKURAN = ['S', 'M', 'L', 'XL', 'XXL'];
+const MAX_ITEM = 10;
+const MAX_QTY = 20;
+const HP_RE = /^(\+62|62|0)\d{8,13}$/;
+
+let KODE = '';
+
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const apiReady = () => API_URL.indexOf('GANTI') !== 0;
+
+function showError(msg, focusId, errId) {
+  const e = $(errId || 'err');
+  e.textContent = msg;
+  e.hidden = false;
+  if (focusId && $(focusId)) $(focusId).focus();
+  else e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function clearError(errId) { $(errId || 'err').hidden = true; }
+
+function pesanError(e) {
+  if (e && e.name === 'TypeError') return 'Koneksi bermasalah. Periksa internet lalu coba lagi.';
+  return (e && e.message) || 'Terjadi kesalahan.';
+}
+
+function fillSelect(sel, placeholder, list) {
+  sel.innerHTML = '';
+  const o = document.createElement('option');
+  o.value = '';
+  o.textContent = placeholder;
+  sel.appendChild(o);
+  list.forEach(v => {
+    const x = document.createElement('option');
+    x.value = v;
+    x.textContent = v;
+    sel.appendChild(x);
+  });
+}
+
+async function api(payload) {
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ kode: KODE }, payload))
+  });
+  if (!r.ok) throw new Error('Server tidak merespons (' + r.status + ').');
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.message || 'Terjadi kesalahan.');
+  return j;
+}
+
+/* ---------- Gambar: header dan panduan ukuran ---------- */
+function onImageFail(img, fn) {
+  if (img.complete && img.naturalWidth === 0) fn();
+  else img.addEventListener('error', fn);
+}
+onImageFail($('banner'), () => {
+  $('banner').parentNode.remove();
+  $('judul').classList.remove('sr');
+});
+onImageFail($('chart'), () => {
+  $('chartLink').remove();
+  $('chartHint').remove();
+  $('tblWrap').hidden = false;
+});
+
+/* ---------- Info pembayaran (dipakai di beberapa tempat) ---------- */
+function payClone() { return $('tplPay').content.cloneNode(true); }
+document.querySelectorAll('.payslot').forEach(s => s.appendChild(payClone()));
+
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest && ev.target.closest('.copy');
+  if (!b) return;
+  const txt = b.parentNode.querySelector('.rek-no').textContent.trim();
+  try {
+    await navigator.clipboard.writeText(txt);
+    b.textContent = 'Tersalin';
+  } catch (e) {
+    window.prompt('Salin nomor rekening:', txt);
+  }
+  setTimeout(() => { b.textContent = 'Salin'; }, 2000);
+});
+
+/* ---------- Gerbang kode akses ---------- */
+async function masuk(kode) {
+  KODE = kode;
+  const j = await api({ action: 'kelas' });
+  fillSelect($('kelas'), 'Pilih kelas', j.kelas);
+  $('muat').hidden = true;
+  $('gate').hidden = true;
+  $('app').hidden = false;
+  if (location.hash === '#bukti') pilihTab('B');
+}
+
+$('fg').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  clearError('errG');
+  const k = $('kode').value.trim();
+  if (!apiReady()) return showError('Alamat server (API_URL) belum diatur pada index.html.', null, 'errG');
+  if (!k) return showError('Masukkan kode akses.', 'kode', 'errG');
+  const btn = $('btnG');
+  btn.disabled = true;
+  btn.textContent = 'Memeriksa…';
+  try {
+    await masuk(k);
+    try { sessionStorage.setItem('kodeAkses', k); } catch (e) { /* abaikan */ }
+  } catch (e) {
+    KODE = '';
+    showError(pesanError(e), 'kode', 'errG');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Masuk';
+  }
+});
+
+async function mulai() {
+  $('muatTeks').textContent = 'Memuat formulir…';
+  $('muatCoba').hidden = true;
+  $('muat').hidden = false;
+  if (!apiReady()) {
+    $('muatTeks').textContent = 'Alamat server (API_URL) belum diatur pada index.html.';
+    return;
+  }
+  try {
+    KODE = '';
+    const s = await api({ action: 'status' });
+    if (!s.kodeDiperlukan) { await masuk(''); return; }
+    let k = '';
+    try { k = sessionStorage.getItem('kodeAkses') || ''; } catch (e) { /* abaikan */ }
+    if (k) {
+      try { await masuk(k); return; } catch (e) {
+        KODE = '';
+        try { sessionStorage.removeItem('kodeAkses'); } catch (e2) { /* abaikan */ }
+      }
+    }
+    $('muat').hidden = true;
+    $('gate').hidden = false;
+  } catch (e) {
+    $('muatTeks').textContent = pesanError(e) + ' Muat ulang halaman atau coba lagi.';
+    $('muatCoba').hidden = false;
+  }
+}
+$('muatCoba').addEventListener('click', mulai);
+
+/* ---------- Tab ---------- */
+function pilihTab(t) {
+  const b = t === 'B';
+  $('panelP').hidden = b;
+  $('panelB').hidden = !b;
+  $('tabP').classList.toggle('on', !b);
+  $('tabB').classList.toggle('on', b);
+  try { history.replaceState(null, '', b ? '#bukti' : location.pathname + location.search); } catch (e) { /* abaikan */ }
+}
+$('tabP').addEventListener('click', () => pilihTab('P'));
+$('tabB').addEventListener('click', () => pilihTab('B'));
+
+/* ---------- Kelas & nama murid ---------- */
+const cacheMurid = {};
+
+$('kelas').addEventListener('change', async () => {
+  const k = $('kelas').value;
+  const m = $('murid');
+  clearError();
+  if (!k) { m.disabled = true; fillSelect(m, 'Pilih kelas terlebih dahulu', []); return; }
+  m.disabled = true;
+  fillSelect(m, 'Memuat nama murid…', []);
+  try {
+    if (!cacheMurid[k]) cacheMurid[k] = (await api({ action: 'murid', kelas: k })).murid;
+    if ($('kelas').value !== k) return;
+    fillSelect(m, 'Pilih nama murid', cacheMurid[k]);
+    m.disabled = false;
+  } catch (e) {
+    fillSelect(m, 'Gagal memuat', []);
+    showError(pesanError(e));
+  }
+});
+
+/* ---------- Baris pesanan ---------- */
+function addItem() {
+  const list = $('items');
+  if (list.children.length >= MAX_ITEM) return;
+  const d = document.createElement('div');
+  d.className = 'item';
+  d.innerHTML =
+    '<div class="item-h"><b class="no"></b><button type="button" class="rm">Hapus</button></div>' +
+    '<div class="grid">' +
+    '<label class="field"><span>Ukuran <i>*</i></span><select class="u"></select></label>' +
+    '<label class="field"><span>Jumlah <i>*</i></span><input class="q" type="number" min="1" max="' + MAX_QTY + '" value="1" inputmode="numeric"></label>' +
+    '</div>' +
+    '<label class="field" style="margin-bottom:0"><span>Pilihan Lengan <i>*</i></span><select class="l"></select></label>';
+
+  fillSelect(d.querySelector('.u'), 'Pilih ukuran', UKURAN);
+  const keys = Object.keys(HARGA);
+  const l = d.querySelector('.l');
+  fillSelect(l, 'Pilih lengan', keys.map(k => k + ' — ' + rp(HARGA[k]) + '/pcs'));
+  Array.prototype.slice.call(l.options, 1).forEach((o, i) => { o.value = keys[i]; });
+
+  d.querySelector('.rm').addEventListener('click', () => { d.remove(); renumber(); updateTotal(); });
+  d.querySelector('.q').addEventListener('blur', e => {
+    let v = parseInt(e.target.value, 10);
+    if (!(v >= 1)) v = 1;
+    if (v > MAX_QTY) v = MAX_QTY;
+    e.target.value = v;
+    updateTotal();
+  });
+  d.addEventListener('input', updateTotal);
+  d.addEventListener('change', updateTotal);
+
+  list.appendChild(d);
+  renumber();
+  updateTotal();
+}
+
+function renumber() {
+  const rows = document.querySelectorAll('#items .item');
+  rows.forEach((d, i) => {
+    d.querySelector('.no').textContent = 'Kaos ' + (i + 1);
+    d.querySelector('.rm').hidden = rows.length === 1;
+  });
+  $('tambah').hidden = rows.length >= MAX_ITEM;
+}
+
+function readItems() {
+  return Array.prototype.map.call(document.querySelectorAll('#items .item'), d => ({
+    ukuran: d.querySelector('.u').value,
+    lengan: d.querySelector('.l').value,
+    jumlah: parseInt(d.querySelector('.q').value, 10) || 0
+  }));
+}
+
+function updateTotal() {
+  let t = 0, n = 0;
+  readItems().forEach(i => {
+    if (HARGA[i.lengan] && i.jumlah > 0) { t += HARGA[i.lengan] * i.jumlah; n += i.jumlah; }
+  });
+  $('total').textContent = rp(t);
+  $('qty').textContent = n;
+}
+
+$('tambah').addEventListener('click', addItem);
+
+/* ---------- Pembayaran ---------- */
+function statusBayar() {
+  const el = document.querySelector('input[name=bayar]:checked');
+  return el ? el.value : '';
+}
+document.querySelectorAll('input[name=bayar]').forEach(r => {
+  r.addEventListener('change', () => {
+    const sudah = statusBayar() === 'Sudah membayar';
+    $('buktiBox').hidden = !sudah;
+    $('hintMenyusul').hidden = sudah;
+  });
+});
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 1400;
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.round(img.width * s);
+      const h = Math.round(img.height * s);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = c.toDataURL('image/jpeg', 0.8);
+      URL.revokeObjectURL(url);
+      resolve({ name: 'bukti.jpg', mimeType: 'image/jpeg', data: dataUrl.split(',')[1] });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Gambar tidak dapat dibaca. Gunakan screenshot berformat JPG atau PNG.'));
+    };
+    img.src = url;
+  });
+}
+
+/* ---------- Kirim pesanan ---------- */
+$('f').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  clearError();
+
+  const kelas = $('kelas').value;
+  const murid = $('murid').value;
+  const ortu = $('ortu').value.trim().replace(/\s+/g, ' ');
+  const hp = $('hp').value.replace(/[\s().-]/g, '');
+  const items = readItems();
+  const bayar = statusBayar();
+
+  if (!kelas) return showError('Pilih kelas.', 'kelas');
+  if (!murid) return showError('Pilih nama murid.', 'murid');
+  if (ortu.length < 3) return showError('Isi nama lengkap orang tua/wali.', 'ortu');
+  if (!HP_RE.test(hp)) return showError('Nomor handphone tidak valid. Contoh: 081234567890', 'hp');
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (!it.ukuran) return showError('Pilih ukuran pada Kaos ' + (i + 1) + '.');
+    if (!it.lengan) return showError('Pilih model lengan pada Kaos ' + (i + 1) + '.');
+    if (!(it.jumlah >= 1 && it.jumlah <= MAX_QTY)) return showError('Jumlah pada Kaos ' + (i + 1) + ' harus 1 sampai ' + MAX_QTY + '.');
+  }
+  if (!bayar) return showError('Pilih status pembayaran.');
+  if (bayar === 'Sudah membayar' && !$('bukti').files[0]) return showError('Unggah screenshot bukti bayar.', 'bukti');
+
+  const btn = $('kirim');
+  btn.disabled = true;
+  btn.textContent = 'Mengirim…';
+
+  try {
+    let bukti = null;
+    if (bayar === 'Sudah membayar') bukti = await compressImage($('bukti').files[0]);
+    const j = await api({
+      action: 'pesan',
+      kelas: kelas, murid: murid, namaOrtu: ortu, hp: hp,
+      items: items, statusBayar: bayar, bukti: bukti,
+      website: $('website').value
+    });
+    showSuccess(j, { kelas: kelas, murid: murid, items: items, bayar: bayar, hp: hp });
+  } catch (e) {
+    let msg = pesanError(e);
+    if (e && e.name === 'TypeError') msg += ' Jika sudah pernah menekan kirim, hubungi panitia sebelum mengirim ulang.';
+    showError(msg);
+    btn.disabled = false;
+    btn.textContent = 'Kirim Pesanan';
+  }
+});
+
+function showSuccess(j, d) {
+  $('f').hidden = true;
+  $('sId').textContent = j.id;
+
+  const sum = $('sSum');
+  sum.innerHTML = '';
+  const row = (a, b) => {
+    const r = document.createElement('div');
+    const x = document.createElement('span'); x.textContent = a;
+    const y = document.createElement('b'); y.textContent = b;
+    r.appendChild(x); r.appendChild(y); sum.appendChild(r);
+  };
+  row('Murid', d.murid + ' (' + d.kelas + ')');
+  d.items.forEach(i => row(i.ukuran + ' · ' + i.lengan, i.jumlah + ' pcs'));
+  row('Total', rp(j.total));
+
+  const payBox = $('sPay');
+  payBox.innerHTML = '';
+  if (d.bayar === 'Sudah membayar') {
+    $('sNote').textContent = 'Bukti pembayaran Anda sudah kami terima dan akan diverifikasi panitia.';
+  } else {
+    $('sNote').textContent = 'Silakan selesaikan pembayaran sebesar ' + rp(j.total) +
+      ' melalui rekening atau QRIS berikut. Setelah membayar, unggah bukti bayar lewat tab "Unggah Bukti Bayar" menggunakan ID pesanan dan nomor HP Anda.';
+    payBox.appendChild(payClone());
+    const u = $('sUnggah');
+    u.hidden = false;
+    u.onclick = () => {
+      $('bId').value = j.id;
+      $('bHp').value = d.hp;
+      pilihTab('B');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+  }
+  $('sukses').hidden = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------- Kirim bukti bayar susulan ---------- */
+$('fb').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  clearError('errB');
+
+  const id = $('bId').value.trim().toUpperCase();
+  const hp = $('bHp').value.replace(/[\s().-]/g, '');
+  const file = $('bFile').files[0];
+
+  if (!/^KS\d{4,}$/.test(id)) return showError('ID pesanan tidak valid. Contoh: KS0007', 'bId', 'errB');
+  if (!HP_RE.test(hp)) return showError('Nomor handphone tidak valid. Contoh: 081234567890', 'bHp', 'errB');
+  if (!file) return showError('Unggah screenshot bukti bayar.', 'bFile', 'errB');
+
+  const btn = $('kirimB');
+  btn.disabled = true;
+  btn.textContent = 'Mengirim…';
+
+  try {
+    const bukti = await compressImage(file);
+    const j = await api({ action: 'bukti', id: id, hp: hp, bukti: bukti, website: $('bWeb').value });
+    $('fb').hidden = true;
+    $('bSId').textContent = j.id;
+    $('bSNote').textContent = 'Bukti pembayaran sebesar ' + rp(j.total) + ' sudah kami terima dan akan diverifikasi panitia.';
+    $('suksesB').hidden = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    showError(pesanError(e), null, 'errB');
+    btn.disabled = false;
+    btn.textContent = 'Kirim Bukti Bayar';
+  }
+});
+
+/* ---------- Mulai ---------- */
+addItem();
+mulai();
+</script>
+</body>
+</html>
