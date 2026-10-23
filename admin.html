@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin Rekap Kaos EcoPreneur TechFest 2026</title>
+<style>
+:root{--g:#1f7a4d;--g-dark:#165c3a;--g-soft:#e8f3ec;--ink:#1c2420;--muted:#5d6b63;--line:#d5ddd8;--bg:#f2f6f3;--card:#fff;--err:#b3261e;--amber:#fff3e0;--amber-line:#f0a64d;--r:14px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 16px 56px}
+h1{margin:0;font-size:1.4rem;line-height:1.2}
+h2{margin:0 0 4px;font-size:1.05rem}
+p{margin:0 0 8px}
+.muted{color:var(--muted)}
+.small{font-size:.82rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:14px 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0}
+.top .btns{display:flex;gap:8px}
+button{font:inherit;cursor:pointer}
+.btn{background:#fff;color:var(--g-dark);border:1.5px solid var(--g);border-radius:10px;padding:8px 14px;font-weight:600}
+.btn.solid{background:var(--g);color:#fff}
+.btn:disabled{opacity:.6;cursor:wait}
+.field{display:block;margin:0 0 12px}
+.field>span{display:block;font-weight:600;margin-bottom:4px}
+select,input[type=text],input[type=password],input[type=search]{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+select:focus,input:focus{outline:2px solid var(--g);outline-offset:1px;border-color:var(--g)}
+.err{background:#fdecea;color:var(--err);border:1px solid #f3b9b4;border-radius:10px;padding:10px 12px;margin:10px 0;font-weight:600}
+#login{max-width:420px;margin:48px auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .l{color:var(--muted);font-size:.8rem}
+.stat .v{font-size:1.3rem;font-weight:800;color:var(--g-dark);overflow-wrap:anywhere}
+.stat.warn{background:var(--amber);border-color:var(--amber-line)}
+.stat.warn .v{color:#8a4b00}
+.stat button{margin-top:6px;padding:4px 10px;font-size:.8rem}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:end}
+.checks{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px}
+.checks label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.checks input{width:18px;height:18px;accent-color:var(--g)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:320px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:var(--g-soft);color:var(--g-dark);white-space:nowrap}
+td.n,th.n{text-align:right;white-space:nowrap}
+tfoot td{font-weight:800;background:#f7faf8}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.cols .card{margin:0}
+.list td{font-size:.88rem}
+.list select{min-width:150px;padding:6px 8px;font-size:14px}
+tr.ganda td{background:var(--amber)}
+tr.dobel td{opacity:.55;text-decoration:line-through}
+tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
+.badge{display:inline-block;border-radius:99px;padding:2px 9px;font-size:.76rem;font-weight:700;white-space:nowrap}
+.b-ok{background:#d9f0e2;color:#14562f}
+.b-wait{background:#fff0c9;color:#7a5200}
+.b-ganda{background:#ffd9b0;color:#8a3b00}
+.b-info{background:#e4ecf7;color:#1d4a7a}
+.gnote{font-size:.78rem;color:#8a3b00;margin-top:4px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1c2420;color:#fff;border-radius:10px;padding:10px 16px;font-weight:600;z-index:10}
+.empty{color:var(--muted);padding:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Masuk -->
+<section id="login" class="card">
+  <h1 style="font-size:1.25rem">Admin Rekap Kaos</h1>
+  <p class="muted">EcoPreneur TechFest 2026. Khusus panitia.</p>
+  <form id="fl" novalidate>
+    <label class="field"><span>Password</span>
+      <input id="pass" type="password" autocomplete="current-password" autofocus>
+    </label>
+    <div id="errL" class="err" role="alert" hidden></div>
+    <button type="submit" id="btnL" class="btn solid" style="width:100%;padding:12px">Masuk</button>
+  </form>
+</section>
+
+<!-- Panel admin -->
+<div id="panel" hidden>
+  <div class="top">
+    <div>
+      <h1>Rekap Pemesanan Kaos</h1>
+      <div class="muted small" id="diperbarui">EcoPreneur TechFest 2026</div>
+    </div>
+    <div class="btns">
+      <button type="button" id="btnMuat" class="btn">Muat ulang</button>
+      <button type="button" id="btnKeluar" class="btn">Keluar</button>
+    </div>
+  </div>
+
+  <div id="errP" class="err" role="alert" hidden></div>
+
+  <div class="stats" id="stats"></div>
+
+  <section class="card">
+    <h2>Filter</h2>
+    <p class="muted small">Ringkasan dan rekap mengikuti filter <b>Kelas</b> dan <b>Pembayaran</b>. Pencarian dan opsi di bawahnya hanya memengaruhi daftar pesanan.</p>
+    <div class="filters">
+      <label class="field" style="margin:0"><span>Kelas</span><select id="fKelas"><option value="">Semua kelas</option></select></label>
+      <label class="field" style="margin:0"><span>Pembayaran</span>
+        <select id="fBayar">
+          <option value="">Semua</option>
+          <option value="sudah">Sudah membayar</option>
+          <option value="belum">Belum membayar (menyusul)</option>
+        </select>
+      </label>
+      <label class="field" style="margin:0"><span>Cari (murid, orang tua, ID, HP)</span><input id="fCari" type="search" autocomplete="off"></label>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="fGanda"> Hanya pesanan ganda</label>
+      <label><input type="checkbox" id="fDobel"> Tampilkan yang ditandai dobel/batal</label>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="card">
+      <h2>Rekap per jenis kaos</h2>
+      <p class="muted small">Jumlah kaos (pcs) per ukuran dan lengan.</p>
+      <div class="scroll" id="tJenis"></div>
+    </section>
+    <section class="card">
+      <h2>Rekap per status pembayaran</h2>
+      <p class="muted small">Pesanan, kaos, dan nilai (Rp).</p>
+      <div class="scroll" id="tBayar"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Rekap per kelas</h2>
+    <p class="muted small">Mengikuti filter Pembayaran, tidak mengikuti filter Kelas.</p>
+    <div class="scroll" id="tKelas"></div>
+  </section>
+
+  <section class="card">
+    <h2>Rekap per kelas dan ukuran</h2>
+    <p class="muted small">Jumlah kaos (pcs), berguna untuk pembagian. Mengikuti filter Pembayaran.</p>
+    <div class="scroll" id="tKelasUk"></div>
+  </section>
+
+  <section class="card">
+    <h2>Daftar pesanan <span class="muted small" id="jmlDaftar"></span></h2>
+    <p class="muted small">Baris berlatar jingga = kemungkinan input ganda (murid yang sama memiliki lebih dari satu pesanan). Pilih <b>Dobel/Batal</b> pada pesanan yang tidak dipakai agar tidak dihitung di rekap. Pesanan dengan status Dobel/Batal tidak bisa menerima bukti bayar lagi.</p>
+    <div class="scroll"><table class="list" id="tList"></table></div>
+  </section>
+</div>
+
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+// ====== PENGATURAN ======
+// Samakan dengan API_URL di index.html (URL Web App Apps Script, berakhiran /exec)
+const API_URL = 'https://script.google.com/macros/s/AKfycbyCl0OBww0dFeb1SoA33V6ITp3HbHA4xDgAfJGHCfWxqzoyNTPM4ot_wABllv4AUYjp8Q/exec';
+// ========================
+
+const UKURAN = ['S', 'M', 'L', 'XL', 'XXL'];
+const LENGAN = ['Lengan pendek', 'Lengan panjang'];
+const DOBEL = 'Dobel/Batal';
+
+let TOKEN = '';
+let DATA = null;
+
+const $ = id => document.getElementById(id);
+const rp = n => 'Rp' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const nf = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+/* ---------- Pembantu tampilan (semua teks lewat textContent, aman dari XSS) ---------- */
+function el(tag, attrs, kids) {
+  const e = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(k => {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'text') e.textContent = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  });
+  (kids || []).forEach(c => { if (c != null) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+  return e;
+}
+
+function tabel(target, heads, rows, foot) {
+  const t = target.tagName === 'TABLE' ? target : el('table');
+  t.innerHTML = '';
+  const hr = el('tr');
+  heads.forEach(h => hr.appendChild(el('th', { class: h.n ? 'n' : '', text: h.t })));
+  t.appendChild(el('thead', null, [hr]));
+  const tb = el('tbody');
+  rows.forEach(r => {
+    const tr = el('tr', r.cls ? { class: r.cls } : null);
+    r.c.forEach((c, i) => {
+      const td = el('td', heads[i] && heads[i].n ? { class: 'n' } : null);
+      if (c != null && typeof c === 'object') td.appendChild(c);
+      else td.textContent = c == null ? '' : String(c);
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  if (foot) {
+    const fr = el('tr');
+    foot.forEach((c, i) => fr.appendChild(el('td', heads[i] && heads[i].n ? { class: 'n', text: String(c) } : { text: String(c) })));
+    t.appendChild(el('tfoot', null, [fr]));
+  }
+  if (target !== t) { target.innerHTML = ''; target.appendChild(t); }
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toast.h);
+  toast.h = setTimeout(() => { t.hidden = true; }, 2200);
+}
+
+function showErr(id, msg) { const e = $(id); e.textContent = msg; e.hidden = false; }
+function hideErr(id) { $(id).hidden = true; }
+function pesanError(e) {
+  return e && e.name === 'TypeError' ? 'Koneksi bermasalah. Periksa internet lalu coba lagi.' : ((e && e.message) || 'Terjadi kesalahan.');
+}
+
+/* ---------- API ---------- */
+async function api(payload, tanpaToken) {
+  const body = tanpaToken ? payload : Object.assign({ token: TOKEN }, payload);
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('Server tidak merespons (' + r.status + ').');
+  const j = await r.json();
+  if (!j.ok) {
+    const er = new Error(j.message || 'Terjadi kesalahan.');
+    er.code = j.code;
+    throw er;
+  }
+  return j;
+}
+
+/* ---------- Masuk / keluar ---------- */
+function tampilLogin(pesan) {
+  TOKEN = '';
+  DATA = null;
+  try { sessionStorage.removeItem('adminToken'); } catch (e) { /* abaikan */ }
+  $('panel').hidden = true;
+  $('login').hidden = false;
+  if (pesan) showErr('errL', pesan); else hideErr('errL');
+}
+
+$('fl').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  hideErr('errL');
+  const pass = $('pass').value;
+  if (!pass) return showErr('errL', 'Isi password.');
+  const b = $('btnL');
+  b.disabled = true;
+  b.textContent = 'Memeriksa…';
+  try {
+    const j = await api({ action: 'admin_login', password: pass }, true);
+    TOKEN = j.token;
+    try { sessionStorage.setItem('adminToken', TOKEN); } catch (e) { /* abaikan */ }
+    $('pass').value = '';
+    await muat();
+  } catch (e) {
+    showErr('errL', pesanError(e));
+  } finally {
+    b.disabled = false;
+    b.textContent = 'Masuk';
+  }
+});
+
+$('btnKeluar').addEventListener('click', async () => {
+  const t = TOKEN;
+  tampilLogin();
+  try { await api({ action: 'admin_keluar', token: t }, true); } catch (e) { /* abaikan */ }
+});
+
+/* ---------- Muat data ---------- */
+async function muat() {
+  hideErr('errP');
+  const b = $('btnMuat');
+  b.disabled = true;
+  try {
+    DATA = await api({ action: 'admin_data' });
+    $('login').hidden = true;
+    $('panel').hidden = false;
+    isiFilterKelas();
+    $('diperbarui').textContent = 'Diperbarui ' + new Date().toLocaleString('id-ID');
+    render();
+  } catch (e) {
+    if (e && e.code === 'sesi') return tampilLogin(e.message);
+    if ($('panel').hidden) tampilLogin(pesanError(e)); else showErr('errP', pesanError(e));
+    throw e;
+  } finally {
+    b.disabled = false;
+  }
+}
+$('btnMuat').addEventListener('click', () => { muat().catch(() => {}); });
+
+function kelasCmp(a, b) {
+  const rank = k => {
+    const m = /^(XII|XI|X)(?![A-Z])/.exec(String(k).toUpperCase().replace(/\s/g, ''));
+    return m ? { XII: 3, XI: 2, X: 1 }[m[1]] : 9;
+  };
+  const num = k => { const m = /(\d+)\s*$/.exec(k); return m ? +m[1] : 0; };
+  return rank(a) - rank(b) || num(a) - num(b) || String(a).localeCompare(String(b));
+}
+
+function isiFilterKelas() {
+  const sel = $('fKelas');
+  const cur = sel.value;
+  const ks = Array.from(new Set(DATA.pesanan.map(p => p.kelas))).sort(kelasCmp);
+  sel.innerHTML = '';
+  sel.appendChild(el('option', { value: '', text: 'Semua kelas' }));
+  ks.forEach(k => sel.appendChild(el('option', { value: k, text: k })));
+  sel.value = ks.indexOf(cur) >= 0 ? cur : '';
+}
+
+/* ---------- Penyaringan dan hitungan ---------- */
+const aktif = p => p.verif !== DOBEL;
+const sudahBayar = p => p.status === 'Sudah membayar';
+const cocokBayar = (p, f) => !f.bayar || (f.bayar === 'sudah' ? sudahBayar(p) : !sudahBayar(p));
+
+function filterNow() {
+  return {
+    kelas: $('fKelas').value,
+    bayar: $('fBayar').value,
+    cari: $('fCari').value.trim().toLowerCase(),
+    ganda: $('fGanda').checked,
+    dobel: $('fDobel').checked
+  };
+}
+
+function render() {
+  if (!DATA) return;
+  const f = filterNow();
+  const byId = {};
+  DATA.pesanan.forEach(p => { byId[p.id] = p; });
+
+  // Untuk rekap: pesanan yang dihitung (bukan dobel/batal) sesuai filter kelas + pembayaran.
+  const hitung = DATA.pesanan.filter(p => aktif(p) && (!f.kelas || p.kelas === f.kelas) && cocokBayar(p, f));
+  const hitungSemuaKelas = DATA.pesanan.filter(p => aktif(p) && cocokBayar(p, f));
+  const idHitung = {};
+  hitung.forEach(p => { idHitung[p.id] = true; });
+  const idSemuaKelas = {};
+  hitungSemuaKelas.forEach(p => { idSemuaKelas[p.id] = true; });
+
+  renderStats(hitung);
+  renderJenis(idHitung);
+  renderBayar(DATA.pesanan.filter(p => aktif(p) && (!f.kelas || p.kelas === f.kelas)));
+  renderKelas(hitungSemuaKelas);
+  renderKelasUkuran(hitungSemuaKelas, idSemuaKelas, byId);
+  renderDaftar(f);
+}
+
+function renderStats(ps) {
+  const pcs = ps.reduce((a, p) => a + p.jumlah, 0);
+  const tot = ps.reduce((a, p) => a + p.total, 0);
+  const lunas = ps.filter(sudahBayar).reduce((a, p) => a + p.total, 0);
+  const grupGanda = new Set(DATA.pesanan.filter(p => p.ganda).map(p => p.kelas + '|' + p.murid)).size;
+
+  const box = $('stats');
+  box.innerHTML = '';
+  const kartu = (l, v, extra) => el('div', { class: 'stat' + (extra && extra.warn ? ' warn' : '') }, [
+    el('div', { class: 'l', text: l }),
+    el('div', { class: 'v', text: v }),
+    extra && extra.btn ? extra.btn : null
+  ]);
+  box.appendChild(kartu('Pesanan', nf(ps.length)));
+  box.appendChild(kartu('Total kaos', nf(pcs) + ' pcs'));
+  box.appendChild(kartu('Total nilai', rp(tot)));
+  box.appendChild(kartu('Sudah dibayar', rp(lunas)));
+  box.appendChild(kartu('Belum dibayar', rp(tot - lunas)));
+  if (grupGanda > 0) {
+    const b = el('button', { type: 'button', class: 'btn', text: 'Lihat' });
+    b.addEventListener('click', () => {
+      $('fGanda').checked = true;
+      render();
+      $('tList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    box.appendChild(kartu('Murid dengan pesanan ganda', nf(grupGanda), { warn: true, btn: b }));
+  } else {
+    box.appendChild(kartu('Pesanan ganda', '0'));
+  }
+}
+
+function renderJenis(idHitung) {
+  const m = {};
+  UKURAN.forEach(u => { m[u] = {}; LENGAN.forEach(l => { m[u][l] = 0; }); });
+  DATA.rincian.forEach(r => {
+    if (!idHitung[r.id] || !m[r.ukuran] || m[r.ukuran][r.lengan] == null) return;
+    m[r.ukuran][r.lengan] += r.jumlah;
+  });
+  const colTot = { 'Lengan pendek': 0, 'Lengan panjang': 0 };
+  const rows = UKURAN.map(u => {
+    const a = m[u]['Lengan pendek'], b = m[u]['Lengan panjang'];
+    colTot['Lengan pendek'] += a;
+    colTot['Lengan panjang'] += b;
+    return { c: [u, a, b, a + b] };
+  });
+  const all = colTot['Lengan pendek'] + colTot['Lengan panjang'];
+  tabel($('tJenis'),
+    [{ t: 'Ukuran' }, { t: 'Lengan pendek', n: 1 }, { t: 'Lengan panjang', n: 1 }, { t: 'Total', n: 1 }],
+    rows, ['Total', colTot['Lengan pendek'], colTot['Lengan panjang'], all]);
+}
+
+function renderBayar(ps) {
+  const grup = { sudah: { n: 0, pcs: 0, rp: 0, sus: 0 }, belum: { n: 0, pcs: 0, rp: 0, sus: 0 } };
+  ps.forEach(p => {
+    const g = grup[sudahBayar(p) ? 'sudah' : 'belum'];
+    g.n++; g.pcs += p.jumlah; g.rp += p.total;
+    if (sudahBayar(p) && p.susulan) g.sus++;
+  });
+  const lang = grup.sudah.n - grup.sudah.sus;
+  tabel($('tBayar'),
+    [{ t: 'Status' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Nilai', n: 1 }],
+    [
+      { c: ['Sudah membayar', grup.sudah.n, grup.sudah.pcs, rp(grup.sudah.rp)] },
+      { c: ['↳ langsung saat memesan', lang, '', ''] },
+      { c: ['↳ bukti diunggah susulan', grup.sudah.sus, '', ''] },
+      { c: ['Belum membayar (menyusul)', grup.belum.n, grup.belum.pcs, rp(grup.belum.rp)] }
+    ],
+    ['Total', grup.sudah.n + grup.belum.n, grup.sudah.pcs + grup.belum.pcs, rp(grup.sudah.rp + grup.belum.rp)]);
+}
+
+function renderKelas(ps) {
+  const g = {};
+  ps.forEach(p => {
+    const k = g[p.kelas] = g[p.kelas] || { n: 0, pcs: 0, tot: 0, lunas: 0 };
+    k.n++; k.pcs += p.jumlah; k.tot += p.total;
+    if (sudahBayar(p)) k.lunas += p.total;
+  });
+  const ks = Object.keys(g).sort(kelasCmp);
+  const S = { n: 0, pcs: 0, tot: 0, lunas: 0 };
+  const rows = ks.map(k => {
+    S.n += g[k].n; S.pcs += g[k].pcs; S.tot += g[k].tot; S.lunas += g[k].lunas;
+    return { c: [k, g[k].n, g[k].pcs, rp(g[k].tot), rp(g[k].lunas), rp(g[k].tot - g[k].lunas)] };
+  });
+  const heads = [{ t: 'Kelas' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Total', n: 1 }, { t: 'Sudah bayar', n: 1 }, { t: 'Belum bayar', n: 1 }];
+  if (!rows.length) { $('tKelas').innerHTML = ''; $('tKelas').appendChild(el('div', { class: 'empty', text: 'Belum ada pesanan.' })); return; }
+  tabel($('tKelas'), heads, rows, ['Total', S.n, S.pcs, rp(S.tot), rp(S.lunas), rp(S.tot - S.lunas)]);
+}
+
+function renderKelasUkuran(ps, idSet) {
+  const m = {};
+  const kelasById = {};
+  ps.forEach(p => { kelasById[p.id] = p.kelas; });
+  DATA.rincian.forEach(r => {
+    if (!idSet[r.id]) return;
+    const k = kelasById[r.id];
+    m[k] = m[k] || {};
+    m[k][r.ukuran] = (m[k][r.ukuran] || 0) + r.jumlah;
+  });
+  const ks = Object.keys(m).sort(kelasCmp);
+  if (!ks.length) { $('tKelasUk').innerHTML = ''; $('tKelasUk').appendChild(el('div', { class: 'empty', text: 'Belum ada pesanan.' })); return; }
+  const tot = {};
+  UKURAN.forEach(u => { tot[u] = 0; });
+  const rows = ks.map(k => {
+    let s = 0;
+    const cells = UKURAN.map(u => { const v = m[k][u] || 0; tot[u] += v; s += v; return v; });
+    return { c: [k].concat(cells, [s]) };
+  });
+  const heads = [{ t: 'Kelas' }].concat(UKURAN.map(u => ({ t: u, n: 1 })), [{ t: 'Total', n: 1 }]);
+  const all = UKURAN.reduce((a, u) => a + tot[u], 0);
+  tabel($('tKelasUk'), heads, rows, ['Total'].concat(UKURAN.map(u => tot[u]), [all]));
+}
+
+function renderDaftar(f) {
+  let ps = DATA.pesanan.filter(p =>
+    (aktif(p) || f.dobel) &&
+    (!f.kelas || p.kelas === f.kelas) &&
+    cocokBayar(p, f) &&
+    (!f.ganda || p.ganda) &&
+    (!f.cari || (p.murid + ' ' + p.ortu + ' ' + p.id + ' ' + p.hp + ' ' + p.kelas).toLowerCase().indexOf(f.cari) >= 0));
+
+  if (f.ganda) {
+    ps.sort((a, b) => kelasCmp(a.kelas, b.kelas) || a.murid.localeCompare(b.murid) || a.id.localeCompare(b.id));
+  } else {
+    ps.sort((a, b) => b.id.localeCompare(a.id));
+  }
+  $('jmlDaftar').textContent = '(' + ps.length + ' ditampilkan)';
+
+  const heads = [
+    { t: 'ID' }, { t: 'Murid' }, { t: 'Orang tua / HP' }, { t: 'Pesanan' },
+    { t: 'Total', n: 1 }, { t: 'Pembayaran' }, { t: 'Bukti' }, { t: 'Verifikasi' }, { t: 'Catatan' }
+  ];
+  const rows = ps.map(p => {
+    const cls = p.verif === DOBEL ? 'dobel' : (p.ganda ? 'ganda' : '');
+    return { cls: cls, c: [
+      p.id + '\n' + p.waktu.slice(0, 16),
+      el('span', null, [el('b', { text: p.murid }), el('br'), p.kelas]),
+      el('span', null, [p.ortu, el('br'), p.hp]),
+      p.rincian + '  (' + p.jumlah + ' pcs)',
+      rp(p.total),
+      badgeBayar(p),
+      linkBukti(p),
+      selectVerif(p),
+      catatan(p)
+    ] };
+  });
+  const t = $('tList');
+  if (!rows.length) {
+    t.innerHTML = '';
+    t.appendChild(el('tbody', null, [el('tr', null, [el('td', { class: 'empty', text: 'Tidak ada pesanan yang cocok dengan filter.' })])]));
+    return;
+  }
+  tabel(t, heads, rows);
+  // kolom ID: pertahankan baris baru
+  t.querySelectorAll('tbody tr td:first-child').forEach(td => { td.style.whiteSpace = 'pre-line'; td.style.fontWeight = '700'; });
+  t.querySelectorAll('tbody tr td:nth-child(8), tbody tr td:nth-child(9)').forEach(td => td.classList.add('keep'));
+}
+
+function badgeBayar(p) {
+  if (sudahBayar(p)) {
+    return el('span', null, [
+      el('span', { class: 'badge b-ok', text: 'Sudah bayar' }),
+      p.susulan ? el('div', { class: 'small muted', text: 'bukti susulan ' + p.waktuBukti.slice(0, 16) }) : null
+    ]);
+  }
+  return el('span', { class: 'badge b-wait', text: 'Belum bayar' });
+}
+
+function linkBukti(p) {
+  if (p.bukti && p.bukti.indexOf('https://') === 0) {
+    return el('a', { href: p.bukti, target: '_blank', rel: 'noopener', text: 'Lihat' });
+  }
+  return '—';
+}
+
+function selectVerif(p) {
+  const s = el('select', { 'aria-label': 'Verifikasi ' + p.id });
+  [['', 'Belum diperiksa'], ['Terverifikasi', 'Terverifikasi'], [DOBEL, 'Dobel/Batal']].forEach(o => {
+    s.appendChild(el('option', { value: o[0], text: o[1] }));
+  });
+  s.value = p.verif;
+  s.addEventListener('change', async () => {
+    const baru = s.value;
+    if (baru === DOBEL && !window.confirm('Tandai ' + p.id + ' (' + p.murid + ') sebagai dobel/batal?\nPesanan ini tidak akan dihitung di rekap dan tidak bisa menerima bukti bayar lagi.')) {
+      s.value = p.verif;
+      return;
+    }
+    s.disabled = true;
+    try {
+      await api({ action: 'admin_set', id: p.id, nilai: baru });
+      toast(p.id + ' diperbarui');
+      await muat();
+    } catch (e) {
+      if (e && e.code === 'sesi') return tampilLogin(e.message);
+      s.value = p.verif;
+      s.disabled = false;
+      showErr('errP', pesanError(e));
+    }
+  });
+  return s;
+}
+
+function catatan(p) {
+  const box = el('div');
+  if (p.ganda) {
+    box.appendChild(el('span', { class: 'badge b-ganda', text: '⚠ Ganda' }));
+    box.appendChild(el('div', { class: 'gnote', text: 'Murid ini punya pesanan lain: ' + p.gandaDengan.join(', ') + '.' }));
+    if (p.gandaSama) box.appendChild(el('div', { class: 'gnote', text: 'Rincian sama persis, kemungkinan memesan ulang untuk mengunggah bukti bayar.' }));
+  }
+  if (p.catatan) box.appendChild(el('div', { class: 'small muted', text: p.catatan }));
+  return box;
+}
+
+['fKelas', 'fBayar', 'fGanda', 'fDobel'].forEach(id => $(id).addEventListener('change', render));
+$('fCari').addEventListener('input', render);
+
+/* ---------- Mulai ---------- */
+(async function mulai() {
+  let t = '';
+  try { t = sessionStorage.getItem('adminToken') || ''; } catch (e) { /* abaikan */ }
+  if (!t) return;
+  TOKEN = t;
+  try { await muat(); } catch (e) { /* tampilLogin sudah dipanggil */ }
+})();
+</script>
+</body>
+</html>
