@@ -99,7 +99,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 
   <section class="card">
     <h2>Filter</h2>
-    <p class="muted small">Ringkasan dan rekap mengikuti filter <b>Kelas</b> dan <b>Pembayaran</b>. Pencarian dan opsi di bawahnya hanya memengaruhi daftar pesanan.</p>
+    <p class="muted small">Ringkasan dan rekap mengikuti filter <b>Kelas</b> dan <b>Pembayaran</b>. Pesanan guru &amp; tendik tercatat dengan kelas <b>PTK</b>. Pencarian dan opsi di bawahnya hanya memengaruhi daftar pesanan.</p>
     <div class="filters">
       <label class="field" style="margin:0"><span>Kelas</span><select id="fKelas"><option value="">Semua kelas</option></select></label>
       <label class="field" style="margin:0"><span>Pembayaran</span>
@@ -109,7 +109,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
           <option value="belum">Belum membayar (menyusul)</option>
         </select>
       </label>
-      <label class="field" style="margin:0"><span>Cari (murid, orang tua, ID, HP)</span><input id="fCari" type="search" autocomplete="off"></label>
+      <label class="field" style="margin:0"><span>Cari (nama, orang tua, ID, HP)</span><input id="fCari" type="search" autocomplete="off"></label>
     </div>
     <div class="checks">
       <label><input type="checkbox" id="fGanda"> Hanya pesanan ganda</label>
@@ -144,7 +144,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 
   <section class="card">
     <h2>Daftar pesanan <span class="muted small" id="jmlDaftar"></span></h2>
-    <p class="muted small">Baris berlatar jingga = kemungkinan input ganda (murid yang sama memiliki lebih dari satu pesanan). Pilih <b>Dobel/Batal</b> pada pesanan yang tidak dipakai agar tidak dihitung di rekap. Pesanan dengan status Dobel/Batal tidak bisa menerima bukti bayar lagi.</p>
+    <p class="muted small">Baris berlatar jingga = kemungkinan input ganda (murid/PTK yang sama memiliki lebih dari satu pesanan). Pilih <b>Dobel/Batal</b> pada pesanan yang tidak dipakai agar tidak dihitung di rekap. Pesanan dengan status Dobel/Batal tidak bisa menerima bukti bayar lagi. Untuk pembayaran tunai ke Belladina atau lewat koperasi, tekan <b>Tandai lunas</b> setelah uang diterima.</p>
     <div class="scroll"><table class="list" id="tList"></table></div>
   </section>
 </div>
@@ -161,6 +161,8 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyCl0OBww0dFeb1SoA33V6I
 const UKURAN = ['S', 'M', 'L', 'XL', 'XXL'];
 const LENGAN = ['Lengan pendek', 'Lengan panjang'];
 const DOBEL = 'Dobel/Batal';
+const KELAS_PTK = 'PTK'; // samakan dengan KELAS_PTK di Code.gs
+const F_MURID = '__murid'; // nilai filter: semua kelas murid, tanpa PTK
 
 let TOKEN = '';
 let DATA = null;
@@ -313,14 +315,16 @@ function isiFilterKelas() {
   const cur = sel.value;
   const ks = Array.from(new Set(DATA.pesanan.map(p => p.kelas))).sort(kelasCmp);
   sel.innerHTML = '';
-  sel.appendChild(el('option', { value: '', text: 'Semua kelas' }));
-  ks.forEach(k => sel.appendChild(el('option', { value: k, text: k })));
-  sel.value = ks.indexOf(cur) >= 0 ? cur : '';
+  sel.appendChild(el('option', { value: '', text: 'Semua (murid + PTK)' }));
+  sel.appendChild(el('option', { value: F_MURID, text: 'Semua kelas murid (tanpa PTK)' }));
+  ks.forEach(k => sel.appendChild(el('option', { value: k, text: k === KELAS_PTK ? 'PTK (guru & tendik)' : k })));
+  sel.value = (cur === F_MURID || ks.indexOf(cur) >= 0) ? cur : '';
 }
 
 /* ---------- Penyaringan dan hitungan ---------- */
 const aktif = p => p.verif !== DOBEL;
 const sudahBayar = p => p.status === 'Sudah membayar';
+const cocokKelas = (p, f) => !f.kelas || (f.kelas === F_MURID ? p.kelas !== KELAS_PTK : p.kelas === f.kelas);
 const cocokBayar = (p, f) => !f.bayar || (f.bayar === 'sudah' ? sudahBayar(p) : !sudahBayar(p));
 
 function filterNow() {
@@ -340,7 +344,7 @@ function render() {
   DATA.pesanan.forEach(p => { byId[p.id] = p; });
 
   // Untuk rekap: pesanan yang dihitung (bukan dobel/batal) sesuai filter kelas + pembayaran.
-  const hitung = DATA.pesanan.filter(p => aktif(p) && (!f.kelas || p.kelas === f.kelas) && cocokBayar(p, f));
+  const hitung = DATA.pesanan.filter(p => aktif(p) && cocokKelas(p, f) && cocokBayar(p, f));
   const hitungSemuaKelas = DATA.pesanan.filter(p => aktif(p) && cocokBayar(p, f));
   const idHitung = {};
   hitung.forEach(p => { idHitung[p.id] = true; });
@@ -349,7 +353,7 @@ function render() {
 
   renderStats(hitung);
   renderJenis(idHitung);
-  renderBayar(DATA.pesanan.filter(p => aktif(p) && (!f.kelas || p.kelas === f.kelas)));
+  renderBayar(DATA.pesanan.filter(p => aktif(p) && cocokKelas(p, f)));
   renderKelas(hitungSemuaKelas);
   renderKelasUkuran(hitungSemuaKelas, idSemuaKelas, byId);
   renderDaftar(f);
@@ -380,7 +384,7 @@ function renderStats(ps) {
       render();
       $('tList').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-    box.appendChild(kartu('Murid dengan pesanan ganda', nf(grupGanda), { warn: true, btn: b }));
+    box.appendChild(kartu('Pemesan dengan pesanan ganda', nf(grupGanda), { warn: true, btn: b }));
   } else {
     box.appendChild(kartu('Pesanan ganda', '0'));
   }
@@ -407,19 +411,21 @@ function renderJenis(idHitung) {
 }
 
 function renderBayar(ps) {
-  const grup = { sudah: { n: 0, pcs: 0, rp: 0, sus: 0 }, belum: { n: 0, pcs: 0, rp: 0, sus: 0 } };
+  const grup = { sudah: { n: 0, pcs: 0, rp: 0, sus: 0, tun: 0 }, belum: { n: 0, pcs: 0, rp: 0, sus: 0, tun: 0 } };
   ps.forEach(p => {
     const g = grup[sudahBayar(p) ? 'sudah' : 'belum'];
     g.n++; g.pcs += p.jumlah; g.rp += p.total;
-    if (sudahBayar(p) && p.susulan) g.sus++;
+    if (sudahBayar(p) && tunai(p)) g.tun++;
+    else if (sudahBayar(p) && p.susulan) g.sus++;
   });
-  const lang = grup.sudah.n - grup.sudah.sus;
+  const lang = grup.sudah.n - grup.sudah.sus - grup.sudah.tun;
   tabel($('tBayar'),
     [{ t: 'Status' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Nilai', n: 1 }],
     [
       { c: ['Sudah membayar', grup.sudah.n, grup.sudah.pcs, rp(grup.sudah.rp)] },
       { c: ['↳ langsung saat memesan', lang, '', ''] },
       { c: ['↳ bukti diunggah susulan', grup.sudah.sus, '', ''] },
+      { c: ['↳ tunai / koperasi (dicatat panitia)', grup.sudah.tun, '', ''] },
       { c: ['Belum membayar (menyusul)', grup.belum.n, grup.belum.pcs, rp(grup.belum.rp)] }
     ],
     ['Total', grup.sudah.n + grup.belum.n, grup.sudah.pcs + grup.belum.pcs, rp(grup.sudah.rp + grup.belum.rp)]);
@@ -470,7 +476,7 @@ function renderKelasUkuran(ps, idSet) {
 function renderDaftar(f) {
   let ps = DATA.pesanan.filter(p =>
     (aktif(p) || f.dobel) &&
-    (!f.kelas || p.kelas === f.kelas) &&
+    cocokKelas(p, f) &&
     cocokBayar(p, f) &&
     (!f.ganda || p.ganda) &&
     (!f.cari || (p.murid + ' ' + p.ortu + ' ' + p.id + ' ' + p.hp + ' ' + p.kelas).toLowerCase().indexOf(f.cari) >= 0));
@@ -483,7 +489,7 @@ function renderDaftar(f) {
   $('jmlDaftar').textContent = '(' + ps.length + ' ditampilkan)';
 
   const heads = [
-    { t: 'ID' }, { t: 'Murid' }, { t: 'Orang tua / HP' }, { t: 'Pesanan' },
+    { t: 'ID' }, { t: 'Murid / PTK' }, { t: 'Orang tua / HP' }, { t: 'Pesanan' },
     { t: 'Total', n: 1 }, { t: 'Pembayaran' }, { t: 'Bukti' }, { t: 'Verifikasi' }, { t: 'Catatan' }
   ];
   const rows = ps.map(p => {
@@ -512,14 +518,46 @@ function renderDaftar(f) {
   t.querySelectorAll('tbody tr td:nth-child(8), tbody tr td:nth-child(9)').forEach(td => td.classList.add('keep'));
 }
 
+const METODE_TRANSFER = 'Transfer/QRIS';
+const tunai = p => !!p.metode && p.metode !== METODE_TRANSFER;
+const punyaBukti = p => !!p.bukti && p.bukti.indexOf('https://') === 0;
+
 function badgeBayar(p) {
+  const box = el('span');
   if (sudahBayar(p)) {
-    return el('span', null, [
-      el('span', { class: 'badge b-ok', text: 'Sudah bayar' }),
-      p.susulan ? el('div', { class: 'small muted', text: 'bukti susulan ' + p.waktuBukti.slice(0, 16) }) : null
-    ]);
+    box.appendChild(el('span', { class: 'badge b-ok', text: 'Sudah bayar' }));
+    if (tunai(p)) box.appendChild(el('div', { class: 'small muted', text: p.metode + ' · dicatat ' + p.waktuBukti.slice(0, 16) }));
+    else if (p.susulan) box.appendChild(el('div', { class: 'small muted', text: 'bukti susulan ' + p.waktuBukti.slice(0, 16) }));
+  } else {
+    box.appendChild(el('span', { class: 'badge b-wait', text: 'Belum bayar' }));
+    if (tunai(p)) box.appendChild(el('div', { class: 'small muted', text: p.metode }));
   }
-  return el('span', { class: 'badge b-wait', text: 'Belum bayar' });
+  // Pembayaran tunai/koperasi dicatat panitia; pesanan yang punya bukti transfer tidak bisa diubah dari sini.
+  if (!punyaBukti(p) && p.verif !== DOBEL) {
+    const lunas = !sudahBayar(p);
+    const b = el('button', { type: 'button', class: 'btn', text: lunas ? 'Tandai lunas' : 'Batalkan lunas' });
+    b.style.cssText = 'display:block;margin-top:6px;padding:4px 10px;font-size:.8rem';
+    b.addEventListener('click', () => tandaiLunas(p, lunas, b));
+    box.appendChild(b);
+  }
+  return box;
+}
+
+async function tandaiLunas(p, lunas, b) {
+  const tanya = lunas
+    ? 'Tandai ' + p.id + ' (' + p.murid + ') sudah membayar ' + rp(p.total) + (tunai(p) ? ' (' + p.metode + ')' : ' secara tunai') + '?'
+    : 'Batalkan tanda lunas untuk ' + p.id + ' (' + p.murid + ')?';
+  if (!window.confirm(tanya)) return;
+  b.disabled = true;
+  try {
+    await api({ action: 'admin_bayar', id: p.id, lunas: lunas });
+    toast(p.id + (lunas ? ' ditandai lunas' : ' kembali belum bayar'));
+    await muat();
+  } catch (e) {
+    if (e && e.code === 'sesi') return tampilLogin(e.message);
+    b.disabled = false;
+    showErr('errP', pesanError(e));
+  }
 }
 
 function linkBukti(p) {
@@ -560,7 +598,7 @@ function catatan(p) {
   const box = el('div');
   if (p.ganda) {
     box.appendChild(el('span', { class: 'badge b-ganda', text: '⚠ Ganda' }));
-    box.appendChild(el('div', { class: 'gnote', text: 'Murid ini punya pesanan lain: ' + p.gandaDengan.join(', ') + '.' }));
+    box.appendChild(el('div', { class: 'gnote', text: 'Pemesan ini punya pesanan lain: ' + p.gandaDengan.join(', ') + '.' }));
     if (p.gandaSama) box.appendChild(el('div', { class: 'gnote', text: 'Rincian sama persis, kemungkinan memesan ulang untuk mengunggah bukti bayar.' }));
   }
   if (p.catatan) box.appendChild(el('div', { class: 'small muted', text: p.catatan }));
