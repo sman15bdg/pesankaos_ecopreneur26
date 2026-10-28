@@ -196,7 +196,7 @@ button{font:inherit;cursor:pointer}
 
           <div id="boxTunai" class="pay" hidden>
             <b id="tunaiJudul"></b>
-            <p class="small" style="margin:6px 0 0">Setelah pesanan terkirim, Anda akan mendapat ID pesanan. Sebutkan ID tersebut saat membayar. Panitia akan menandai pesanan Anda lunas setelah pembayaran diterima, jadi tidak perlu mengunggah bukti bayar.</p>
+            <p class="small" style="margin:6px 0 0">Setelah pesanan terkirim, Anda dapat membayarnya. Panitia akan menandai pesanan Anda lunas setelah pembayaran diterima, jadi tidak perlu mengunggah bukti bayar.</p>
           </div>
 
           <div id="boxTransfer" hidden>
@@ -632,7 +632,8 @@ function aturBayar() {
   const tf = isTransfer(m);
   $('boxTransfer').hidden = !tf;
   $('boxTunai').hidden = !m || tf;
-  if (m && !tf) $('tunaiJudul').textContent = TEKS_TUNAI[m] + ' sebesar ' + $('total').textContent + '.';
+  // Jumlah baru ditampilkan setelah ada kaos yang lengkap diisi (hindari "Rp0").
+  if (m && !tf) $('tunaiJudul').textContent = TEKS_TUNAI[m] + ($('qty').textContent !== '0' ? ' sebesar ' + $('total').textContent : '') + '.';
   const sudah = tf && statusBayar() === 'Sudah membayar';
   $('buktiBox').hidden = !sudah;
   $('hintMenyusul').hidden = !tf || !statusBayar() || sudah;
@@ -748,7 +749,7 @@ function showSuccess(j, d) {
   payBox.innerHTML = '';
   if (!isTransfer(d.metode)) {
     $('sNote').textContent = TEKS_TUNAI[d.metode] + ' sebesar ' + rp(j.total) +
-      ' dengan menyebutkan ID pesanan ' + j.id + '. Panitia akan menandai pesanan Anda lunas setelah pembayaran diterima.';
+      '. Panitia akan menandai pesanan Anda lunas setelah pembayaran diterima.';
   } else if (d.bayar === 'Sudah membayar') {
     $('sNote').textContent = 'Bukti pembayaran Anda sudah kami terima dan akan diverifikasi panitia.';
   } else {
