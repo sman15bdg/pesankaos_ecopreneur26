@@ -47,7 +47,9 @@ th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-alig
 th{background:var(--g-soft);color:var(--g-dark);white-space:nowrap}
 td.n,th.n{text-align:right;white-space:nowrap}
 tfoot td{font-weight:800;background:#f7faf8}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:14px}
+.cols>div{min-width:0}
+#ptkNama table{min-width:640px}
 .cols .card{margin:0}
 .list td{font-size:.88rem}
 .list select{min-width:150px;padding:6px 8px;font-size:14px}
@@ -140,6 +142,25 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
     <h2>Rekap per kelas dan ukuran</h2>
     <p class="muted small">Jumlah kaos (pcs), berguna untuk pembagian. Mengikuti filter Pembayaran.</p>
     <div class="scroll" id="tKelasUk"></div>
+  </section>
+
+  <section class="card" id="secPtk">
+    <h2>Rekap Guru &amp; Tendik (PTK)</h2>
+    <p class="muted small">Khusus pesanan dari formulir PTK, tidak terpengaruh filter di atas. Pesanan Dobel/Batal tidak dihitung.</p>
+    <div class="stats" id="ptkStats"></div>
+    <div class="cols" style="margin-top:14px">
+      <div>
+        <h3 style="margin:0 0 6px;font-size:.95rem">Per ukuran dan lengan (pcs)</h3>
+        <div class="scroll" id="ptkJenis"></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 6px;font-size:.95rem">Per metode pembayaran</h3>
+        <div class="scroll" id="ptkMetode"></div>
+      </div>
+    </div>
+    <h3 style="margin:16px 0 6px;font-size:.95rem">Daftar nama pemesan</h3>
+    <p class="muted small">Urut abjad, untuk pengecekan pembayaran dan pembagian kaos.</p>
+    <div class="scroll" id="ptkNama"></div>
   </section>
 
   <section class="card">
@@ -357,6 +378,79 @@ function render() {
   renderKelas(hitungSemuaKelas);
   renderKelasUkuran(hitungSemuaKelas, idSemuaKelas, byId);
   renderDaftar(f);
+  renderPtk();
+}
+
+/* ---------- Rekap khusus PTK (tidak mengikuti filter) ---------- */
+function renderPtk() {
+  const ps = DATA.pesanan.filter(p => aktif(p) && p.kelas === KELAS_PTK);
+  const ids = {};
+  ps.forEach(p => { ids[p.id] = true; });
+
+  // Ringkasan
+  const pcs = ps.reduce((a, p) => a + p.jumlah, 0);
+  const tot = ps.reduce((a, p) => a + p.total, 0);
+  const lunas = ps.filter(sudahBayar).reduce((a, p) => a + p.total, 0);
+  const orang = new Set(ps.map(p => p.murid)).size;
+  const box = $('ptkStats');
+  box.innerHTML = '';
+  [['Pemesan', nf(orang) + ' orang'], ['Pesanan', nf(ps.length)], ['Total kaos', nf(pcs) + ' pcs'],
+   ['Total nilai', rp(tot)], ['Sudah dibayar', rp(lunas)], ['Belum dibayar', rp(tot - lunas)]]
+    .forEach(k => box.appendChild(el('div', { class: 'stat' }, [el('div', { class: 'l', text: k[0] }), el('div', { class: 'v', text: k[1] })])));
+
+  if (!ps.length) {
+    ['ptkJenis', 'ptkMetode', 'ptkNama'].forEach(id => {
+      $(id).innerHTML = '';
+      $(id).appendChild(el('div', { class: 'empty', text: 'Belum ada pesanan PTK.' }));
+    });
+    return;
+  }
+
+  // Per ukuran dan lengan
+  const m = {};
+  UKURAN.forEach(u => { m[u] = { 'Lengan pendek': 0, 'Lengan panjang': 0 }; });
+  DATA.rincian.forEach(r => {
+    if (ids[r.id] && m[r.ukuran] && m[r.ukuran][r.lengan] != null) m[r.ukuran][r.lengan] += r.jumlah;
+  });
+  let a = 0, b = 0;
+  const rowsJ = UKURAN.map(u => {
+    const x = m[u]['Lengan pendek'], y = m[u]['Lengan panjang'];
+    a += x; b += y;
+    return { c: [u, x, y, x + y] };
+  });
+  tabel($('ptkJenis'),
+    [{ t: 'Ukuran' }, { t: 'Pendek', n: 1 }, { t: 'Panjang', n: 1 }, { t: 'Total', n: 1 }],
+    rowsJ, ['Total', a, b, a + b]);
+
+  // Per metode pembayaran
+  const g = {};
+  ps.forEach(p => {
+    const k = p.metode || METODE_TRANSFER;
+    const x = g[k] = g[k] || { n: 0, pcs: 0, tot: 0, lunas: 0 };
+    x.n++; x.pcs += p.jumlah; x.tot += p.total;
+    if (sudahBayar(p)) x.lunas += p.total;
+  });
+  const urut = ['Transfer/QRIS', 'Tunai ke Belladina', 'Melalui Koperasi'];
+  const ks = Object.keys(g).sort((x, y) => (urut.indexOf(x) + 99) % 99 - (urut.indexOf(y) + 99) % 99 || x.localeCompare(y));
+  const S = { n: 0, pcs: 0, tot: 0, lunas: 0 };
+  const rowsM = ks.map(k => {
+    S.n += g[k].n; S.pcs += g[k].pcs; S.tot += g[k].tot; S.lunas += g[k].lunas;
+    return { c: [k, g[k].n, g[k].pcs, rp(g[k].tot), rp(g[k].tot - g[k].lunas)] };
+  });
+  tabel($('ptkMetode'),
+    [{ t: 'Metode' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Nilai', n: 1 }, { t: 'Belum bayar', n: 1 }],
+    rowsM, ['Total', S.n, S.pcs, rp(S.tot), rp(S.tot - S.lunas)]);
+
+  // Daftar nama
+  const daftar = ps.slice().sort((x, y) => x.murid.localeCompare(y.murid, 'id', { sensitivity: 'base' }) || x.id.localeCompare(y.id));
+  tabel($('ptkNama'),
+    [{ t: 'No' }, { t: 'Nama' }, { t: 'ID' }, { t: 'Pesanan' }, { t: 'Total', n: 1 }, { t: 'Metode' }, { t: 'Status' }],
+    daftar.map((p, i) => ({ c: [
+      i + 1, p.murid, p.id, p.rincian + ' (' + p.jumlah + ' pcs)', rp(p.total),
+      p.metode || METODE_TRANSFER,
+      el('span', { class: 'badge ' + (sudahBayar(p) ? 'b-ok' : 'b-wait'), text: sudahBayar(p) ? 'Sudah bayar' : 'Belum bayar' })
+    ] })),
+    ['', 'Total', '', pcs + ' pcs', rp(tot), '', '']);
 }
 
 function renderStats(ps) {
