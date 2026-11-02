@@ -19,7 +19,7 @@ p{margin:0 0 8px}
 .small{font-size:.82rem}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:14px 0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0}
-.top .btns{display:flex;gap:8px}
+.top .btns{display:flex;gap:8px;flex-wrap:wrap}
 button{font:inherit;cursor:pointer}
 .btn{background:#fff;color:var(--g-dark);border:1.5px solid var(--g);border-radius:10px;padding:8px 14px;font-weight:600}
 .btn.solid{background:var(--g);color:#fff}
@@ -90,6 +90,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
       <div class="muted small" id="diperbarui">EcoPreneur TechFest 2026</div>
     </div>
     <div class="btns">
+      <button type="button" id="btnExcel" class="btn solid">Unduh Excel</button>
       <button type="button" id="btnMuat" class="btn">Muat ulang</button>
       <button type="button" id="btnKeluar" class="btn">Keluar</button>
     </div>
@@ -181,13 +182,14 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 </div>
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ====== PENGATURAN ======
 // Samakan dengan API_URL di index.html (URL Web App Apps Script, berakhiran /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbyCl0OBww0dFeb1SoA33V6ITp3HbHA4xDgAfJGHCfWxqzoyNTPM4ot_wABllv4AUYjp8Q/exec';
 // ========================
 
-const UKURAN = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']; // XXXL hanya dari formulir PTK
+const UKURAN = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL']; // XXXL dan 4XL hanya dari formulir PTK
 const LENGAN = ['Lengan pendek', 'Lengan panjang'];
 const DOBEL = 'Dobel/Batal';
 const KELAS_PTK = 'PTK'; // samakan dengan KELAS_PTK di Code.gs
@@ -760,6 +762,104 @@ function catatan(p) {
 
 ['fKelas', 'fBayar', 'fGanda', 'fDobel'].forEach(id => $(id).addEventListener('change', render));
 $('fCari').addEventListener('input', render);
+
+/* ---------- Unduh rekap ke Excel ---------- */
+function unduhExcel() {
+  if (!DATA) return;
+  if (typeof XLSX === 'undefined') return showErr('errP', 'Pustaka Excel gagal dimuat. Periksa internet lalu muat ulang halaman.');
+
+  const ps = DATA.pesanan.slice().sort((a, b) => a.id.localeCompare(b.id));
+  const byId = {};
+  ps.forEach(p => { byId[p.id] = p; });
+  const akt = ps.filter(aktif);
+  const metodeTeks = p => p.metode || (p.kelas === KELAS_PTK ? METODE_TRANSFER : 'Transfer/QRIS');
+  const statusTeks = p => sudahBayar(p) ? 'Sudah bayar' : 'Belum bayar';
+
+  // 1. Semua pesanan (termasuk Dobel/Batal, ditandai di kolom Verifikasi)
+  const sPesanan = [['ID', 'Waktu', 'Kelas', 'Nama Murid / PTK', 'Orang Tua/Wali', 'No. HP', 'Rincian', 'Jumlah Kaos',
+    'Total (Rp)', 'Status Bayar', 'Metode Bayar', 'Waktu Bayar/Bukti', 'Link Bukti', 'Verifikasi', 'Catatan']];
+  ps.forEach(p => sPesanan.push([p.id, p.waktu, p.kelas, p.murid, p.ortu, p.hp, p.rincian, p.jumlah, p.total,
+    statusTeks(p), metodeTeks(p), p.waktuBukti, p.bukti, p.verif || 'Belum diperiksa', p.catatan]));
+
+  // 2. Rekap ukuran x lengan, murid dan PTK terpisah (tanpa Dobel/Batal)
+  const kosong = () => { const o = {}; UKURAN.forEach(u => { o[u] = { 'Lengan pendek': 0, 'Lengan panjang': 0 }; }); return o; };
+  const uM = kosong(), uP = kosong();
+  DATA.rincian.forEach(r => {
+    const p = byId[r.id];
+    if (!p || !aktif(p)) return;
+    const t = p.kelas === KELAS_PTK ? uP : uM;
+    if (t[r.ukuran] && t[r.ukuran][r.lengan] != null) t[r.ukuran][r.lengan] += r.jumlah;
+  });
+  const sUkuran = [['Ukuran', 'Murid - Pendek', 'Murid - Panjang', 'PTK - Pendek', 'PTK - Panjang', 'Total Pendek', 'Total Panjang', 'Total']];
+  const T = [0, 0, 0, 0, 0, 0, 0];
+  UKURAN.forEach(u => {
+    const a = uM[u]['Lengan pendek'], b = uM[u]['Lengan panjang'], c = uP[u]['Lengan pendek'], d = uP[u]['Lengan panjang'];
+    const row = [a, b, c, d, a + c, b + d, a + b + c + d];
+    row.forEach((v, i) => { T[i] += v; });
+    sUkuran.push([u].concat(row));
+  });
+  sUkuran.push(['TOTAL'].concat(T));
+
+  // 3. Rekap per kelas: ukuran + pembayaran (tanpa Dobel/Batal)
+  const g = {};
+  akt.forEach(p => {
+    const k = g[p.kelas] = g[p.kelas] || { n: 0, pcs: 0, tot: 0, lunas: 0, uk: {} };
+    k.n++; k.pcs += p.jumlah; k.tot += p.total;
+    if (sudahBayar(p)) k.lunas += p.total;
+  });
+  DATA.rincian.forEach(r => {
+    const p = byId[r.id];
+    if (!p || !aktif(p)) return;
+    const k = g[p.kelas];
+    k.uk[r.ukuran] = (k.uk[r.ukuran] || 0) + r.jumlah;
+  });
+  const sKelas = [['Kelas', 'Pesanan'].concat(UKURAN, ['Total Kaos', 'Total (Rp)', 'Sudah Bayar (Rp)', 'Belum Bayar (Rp)'])];
+  const TK = new Array(UKURAN.length + 5).fill(0);
+  Object.keys(g).sort(kelasCmp).forEach(k => {
+    const x = g[k];
+    const row = [x.n].concat(UKURAN.map(u => x.uk[u] || 0), [x.pcs, x.tot, x.lunas, x.tot - x.lunas]);
+    row.forEach((v, i) => { TK[i] += v; });
+    sKelas.push([k].concat(row));
+  });
+  sKelas.push(['TOTAL'].concat(TK));
+
+  // 4. PTK: satu baris per kaos, urut nama (untuk pembagian & cek bayar)
+  const sPtk = [['No', 'Nama', 'ID', 'Ukuran', 'Lengan', 'Jumlah', 'Subtotal (Rp)', 'Total Pesanan (Rp)', 'Metode Bayar', 'Status Bayar', 'No. HP', 'Catatan']];
+  const ptkPs = akt.filter(p => p.kelas === KELAS_PTK)
+    .sort((a, b) => a.murid.localeCompare(b.murid, 'id', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
+  let no = 0;
+  ptkPs.forEach(p => {
+    no++;
+    DATA.rincian.filter(r => r.id === p.id).forEach((r, i) => {
+      sPtk.push([i ? '' : no, p.murid, p.id, r.ukuran, r.lengan, r.jumlah, r.subtotal,
+        i ? '' : p.total, metodeTeks(p), statusTeks(p), p.hp, i ? '' : p.catatan]);
+    });
+  });
+
+  // 5. PTK belum memesan
+  const sBelum = [['No', 'Nama']];
+  PTK_BELUM.forEach((n, i) => sBelum.push([i + 1, n]));
+
+  const wb = XLSX.utils.book_new();
+  const tambah = (rows, nama, lebar) => {
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = lebar.map(w => ({ wch: w }));
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(rows.length - 1, 0), c: rows[0].length - 1 } }) };
+    XLSX.utils.book_append_sheet(wb, ws, nama);
+  };
+  tambah(sPesanan, 'Semua Pesanan', [8, 17, 8, 32, 24, 15, 34, 7, 11, 12, 18, 17, 30, 15, 30]);
+  tambah(sUkuran, 'Rekap Ukuran', [8, 14, 15, 13, 14, 13, 14, 8]);
+  tambah(sKelas, 'Rekap Kelas', [10, 9].concat(UKURAN.map(() => 6), [10, 12, 15, 15]));
+  tambah(sPtk, 'PTK', [5, 36, 8, 8, 14, 7, 13, 17, 18, 12, 15, 30]);
+  tambah(sBelum, 'PTK Belum Memesan', [5, 40]);
+
+  const d = new Date();
+  const z = n => String(n).padStart(2, '0');
+  const nama = 'Rekap_Kaos_EcoPreneur_' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + '.xlsx';
+  XLSX.writeFile(wb, nama);
+  toast('Excel diunduh');
+}
+$('btnExcel').addEventListener('click', unduhExcel);
 
 /* ---------- Mulai ---------- */
 (async function mulai() {
