@@ -161,6 +161,14 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
     <h3 style="margin:16px 0 6px;font-size:.95rem">Daftar nama pemesan</h3>
     <p class="muted small">Urut abjad, untuk pengecekan pembayaran dan pembagian kaos.</p>
     <div class="scroll" id="ptkNama"></div>
+
+    <h3 style="margin:16px 0 6px;font-size:.95rem">Belum memesan <span class="muted small" id="ptkBelumJml"></span></h3>
+    <p class="muted small">Nama di sheet PTK yang belum punya pesanan (pesanan Dobel/Batal dianggap belum memesan). Pesanan dengan nama yang diisi manual tidak dicocokkan, jadi periksa juga baris yang bercatatan &ldquo;Nama diisi manual&rdquo;.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px">
+      <input id="ptkBelumCari" type="search" placeholder="Cari nama" autocomplete="off" style="flex:1;min-width:160px">
+      <button type="button" id="ptkBelumSalin" class="btn">Salin daftar</button>
+    </div>
+    <div class="scroll" id="ptkBelum"></div>
   </section>
 
   <section class="card">
@@ -381,6 +389,54 @@ function render() {
   renderPtk();
 }
 
+/* ---------- PTK belum memesan ---------- */
+let PTK_BELUM = [];
+const normNama = s => String(s).toLowerCase().replace(/\s+/g, ' ').trim();
+
+function renderPtkBelum(ps) {
+  const sudah = {};
+  ps.forEach(p => { sudah[normNama(p.murid)] = true; });
+  const daftar = DATA.ptk || [];
+  PTK_BELUM = daftar.filter(n => !sudah[normNama(n)]);
+  $('ptkBelumJml').textContent = daftar.length
+    ? '(' + PTK_BELUM.length + ' dari ' + daftar.length + ' orang)'
+    : '';
+
+  const box = $('ptkBelum');
+  box.innerHTML = '';
+  if (!daftar.length) {
+    box.appendChild(el('div', { class: 'empty', text: 'Daftar PTK kosong atau sheet "PTK" belum dibuat.' }));
+    return;
+  }
+  if (!PTK_BELUM.length) {
+    box.appendChild(el('div', { class: 'empty', text: 'Semua nama di daftar PTK sudah memesan.' }));
+    return;
+  }
+  const q = normNama($('ptkBelumCari').value);
+  const tampil = PTK_BELUM.filter(n => !q || normNama(n).indexOf(q) >= 0);
+  if (!tampil.length) {
+    box.appendChild(el('div', { class: 'empty', text: 'Tidak ada nama yang cocok.' }));
+    return;
+  }
+  tabel(box, [{ t: 'No' }, { t: 'Nama' }], tampil.map((n, i) => ({ c: [i + 1, n] })));
+}
+
+$('ptkBelumCari').addEventListener('input', () => {
+  if (DATA) renderPtkBelum(DATA.pesanan.filter(p => aktif(p) && p.kelas === KELAS_PTK));
+});
+
+$('ptkBelumSalin').addEventListener('click', async () => {
+  if (!PTK_BELUM.length) return toast('Tidak ada nama untuk disalin');
+  const teks = 'PTK yang belum memesan kaos EcoPreneur TechFest 2026:\n' +
+    PTK_BELUM.map((n, i) => (i + 1) + '. ' + n).join('\n');
+  try {
+    await navigator.clipboard.writeText(teks);
+    toast(PTK_BELUM.length + ' nama disalin');
+  } catch (e) {
+    window.prompt('Salin daftar berikut:', teks);
+  }
+});
+
 /* ---------- Rekap khusus PTK (tidak mengikuti filter) ---------- */
 function renderPtk() {
   const ps = DATA.pesanan.filter(p => aktif(p) && p.kelas === KELAS_PTK);
@@ -399,6 +455,7 @@ function renderPtk() {
     .forEach(k => box.appendChild(el('div', { class: 'stat' }, [el('div', { class: 'l', text: k[0] }), el('div', { class: 'v', text: k[1] })])));
 
   if (!ps.length) {
+    renderPtkBelum(ps);
     ['ptkJenis', 'ptkMetode', 'ptkNama'].forEach(id => {
       $(id).innerHTML = '';
       $(id).appendChild(el('div', { class: 'empty', text: 'Belum ada pesanan PTK.' }));
@@ -440,6 +497,8 @@ function renderPtk() {
   tabel($('ptkMetode'),
     [{ t: 'Metode' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Nilai', n: 1 }, { t: 'Belum bayar', n: 1 }],
     rowsM, ['Total', S.n, S.pcs, rp(S.tot), rp(S.tot - S.lunas)]);
+
+  renderPtkBelum(ps);
 
   // Daftar nama
   const daftar = ps.slice().sort((x, y) => x.murid.localeCompare(y.murid, 'id', { sensitivity: 'base' }) || x.id.localeCompare(y.id));
