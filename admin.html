@@ -231,8 +231,6 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
   </div>
 </div>
 
-<!-- xlsx-js-style: versi SheetJS yang mendukung warna sel di Excel -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
 // ====== PENGATURAN ======
 // Samakan dengan API_URL di index.html (URL Web App Apps Script, berakhiran /exec)
@@ -347,6 +345,7 @@ $('fl').addEventListener('submit', async ev => {
     TOKEN = j.token;
     try { sessionStorage.setItem('adminToken', TOKEN); } catch (e) { /* abaikan */ }
     $('pass').value = '';
+    b.textContent = 'Memuat data pesanan…';
     await muat();
   } catch (e) {
     showErr('errL', pesanError(e));
@@ -998,9 +997,42 @@ $('rwCari').addEventListener('input', () => { if (DATA) renderRiwayat(); });
 $('fCari').addEventListener('input', render);
 
 /* ---------- Unduh rekap ke Excel ---------- */
+// Pustaka Excel (xlsx-js-style, mendukung warna sel) baru dimuat saat tombol Unduh Excel ditekan,
+// supaya membuka dan login admin tidak menunggu unduhan ~400 KB.
+const XLSX_URL = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+let xlsxJanji = null;
+function muatXlsx() {
+  if (typeof XLSX !== 'undefined') return Promise.resolve();
+  if (!xlsxJanji) {
+    xlsxJanji = new Promise((ok, gagal) => {
+      const sc = document.createElement('script');
+      sc.src = XLSX_URL;
+      sc.onload = ok;
+      sc.onerror = () => { xlsxJanji = null; sc.remove(); gagal(new Error('Pustaka Excel gagal dimuat. Periksa internet lalu coba lagi.')); };
+      document.head.appendChild(sc);
+    });
+  }
+  return xlsxJanji;
+}
+
+async function klikExcel() {
+  if (!DATA) return;
+  const b = $('btnExcel');
+  b.disabled = true;
+  b.textContent = 'Menyiapkan…';
+  try {
+    await muatXlsx();
+    unduhExcel();
+  } catch (e) {
+    showErr('errP', pesanError(e));
+  } finally {
+    b.disabled = false;
+    b.textContent = 'Unduh Excel';
+  }
+}
+
 function unduhExcel() {
   if (!DATA) return;
-  if (typeof XLSX === 'undefined') return showErr('errP', 'Pustaka Excel gagal dimuat. Periksa internet lalu muat ulang halaman.');
 
   const ps = DATA.pesanan.slice().sort((a, b) => a.id.localeCompare(b.id));
   const byId = {};
@@ -1125,7 +1157,7 @@ function unduhExcel() {
   XLSX.writeFile(wb, nama);
   toast('Excel diunduh');
 }
-$('btnExcel').addEventListener('click', unduhExcel);
+$('btnExcel').addEventListener('click', klikExcel);
 
 /* ---------- Mulai ---------- */
 (async function mulai() {
