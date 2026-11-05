@@ -92,7 +92,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 <section id="login" class="card">
   <h1 style="font-size:1.25rem">Admin Rekap Kaos</h1>
   <p class="muted">EcoPreneur TechFest 2026. Khusus panitia.</p>
-  <p class="small muted" style="margin-top:-4px">Versi halaman: 5 Nov 2026 sore</p>
+  <p class="small muted" style="margin-top:-4px">Versi halaman: 5 Nov 2026, 17.45</p>
   <form id="fl" novalidate>
     <label class="field"><span>Password</span>
       <input id="pass" type="password" autocomplete="current-password" autofocus>
@@ -306,7 +306,8 @@ function pesanError(e) {
 }
 
 /* ---------- API ---------- */
-const BATAS_DETIK = 60; // Apps Script yang baru "bangun" bisa lambat; lebih dari ini dianggap gagal
+// Batas tunggu. Apps Script sendiri menghentikan proses setelah 6 menit, jadi batas di sini sedikit di bawahnya.
+const BATAS_DETIK = 330;
 async function api(payload, tanpaToken) {
   const body = tanpaToken ? payload : Object.assign({ token: TOKEN }, payload);
   const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -321,7 +322,7 @@ async function api(payload, tanpaToken) {
     });
   } catch (e) {
     if (e && e.name === 'AbortError') {
-      throw new Error('Server Google tidak menjawab dalam ' + BATAS_DETIK + ' detik. Coba lagi beberapa saat lagi.');
+      throw new Error('Server Google tidak menjawab dalam ' + Math.round(BATAS_DETIK / 60) + ' menit. Buka Apps Script, menu Eksekusi, untuk melihat penyebabnya.');
     }
     throw e;
   } finally {
@@ -365,9 +366,16 @@ $('fl').addEventListener('submit', async ev => {
     TOKEN = j.token;
     try { sessionStorage.setItem('adminToken', TOKEN); } catch (e) { /* abaikan */ }
     $('pass').value = '';
-    tahap = 'Memuat data pesanan';
-    tulis();
-    await muat();
+    // Code.gs baru mengirim data sekalian saat login; Code.gs lama belum, jadi ambil terpisah.
+    if (j.data && j.data.ok) {
+      tahap = 'Menampilkan';
+      tulis();
+      tampilData(j.data);
+    } else {
+      tahap = 'Memuat data pesanan';
+      tulis();
+      await muat();
+    }
   } catch (e) {
     showErr('errL', pesanError(e));
   } finally {
@@ -384,26 +392,33 @@ $('btnKeluar').addEventListener('click', async () => {
 });
 
 /* ---------- Muat data ---------- */
-async function muat() {
+function tampilData(d) {
+  DATA = d;
+  $('login').hidden = true;
+  $('panel').hidden = false;
+  isiFilterKelas();
+  $('diperbarui').textContent = 'Diperbarui ' + new Date().toLocaleString('id-ID');
+  render();
+}
+
+async function muat(segar) {
   hideErr('errP');
   const b = $('btnMuat');
   b.disabled = true;
+  b.textContent = 'Memuat…';
   try {
-    DATA = await api({ action: 'admin_data' });
-    $('login').hidden = true;
-    $('panel').hidden = false;
-    isiFilterKelas();
-    $('diperbarui').textContent = 'Diperbarui ' + new Date().toLocaleString('id-ID');
-    render();
+    tampilData(await api({ action: 'admin_data', segar: !!segar }));
   } catch (e) {
     if (e && e.code === 'sesi') return tampilLogin(e.message);
     if ($('panel').hidden) tampilLogin(pesanError(e)); else showErr('errP', pesanError(e));
     throw e;
   } finally {
     b.disabled = false;
+    b.textContent = 'Muat ulang';
   }
 }
-$('btnMuat').addEventListener('click', () => { muat().catch(() => {}); });
+// Muat ulang = selalu baca langsung dari spreadsheet (termasuk perubahan yang diketik manual di sheet).
+$('btnMuat').addEventListener('click', () => { muat(true).catch(() => {}); });
 
 function kelasCmp(a, b) {
   const rank = k => {
