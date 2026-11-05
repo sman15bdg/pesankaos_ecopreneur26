@@ -92,7 +92,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 <section id="login" class="card">
   <h1 style="font-size:1.25rem">Admin Rekap Kaos</h1>
   <p class="muted">EcoPreneur TechFest 2026. Khusus panitia.</p>
-  <p class="small muted" style="margin-top:-4px">Versi halaman: 5 Nov 2026, 17.45</p>
+  <p class="small muted" style="margin-top:-4px">Versi halaman: 5 Nov 2026, 18.00</p>
   <form id="fl" novalidate>
     <label class="field"><span>Password</span>
       <input id="pass" type="password" autocomplete="current-password" autofocus>
@@ -306,30 +306,73 @@ function pesanError(e) {
 }
 
 /* ---------- API ---------- */
-// Batas tunggu. Apps Script sendiri menghentikan proses setelah 6 menit, jadi batas di sini sedikit di bawahnya.
-const BATAS_DETIK = 330;
-async function api(payload, tanpaToken) {
-  const body = tanpaToken ? payload : Object.assign({ token: TOKEN }, payload);
+// Server normalnya menjawab dalam beberapa detik. Kadang Google "menjatuhkan" permintaan sehingga tidak
+// pernah dijawab. Untuk permintaan yang hanya MEMBACA (login, muat data), halaman menunggu sebentar lalu
+// otomatis mencoba lagi. Permintaan yang MENGUBAH data tidak diulang otomatis agar tidak tercatat dua kali.
+const BACA_SAJA = ['admin_login', 'admin_data'];
+const TUNGGU_BACA = 20;   // detik per percobaan
+const COBA_BACA = 3;      // jumlah percobaan
+const TUNGGU_TULIS = 120; // detik untuk perubahan data
+let onCobaLagi = null;    // dipanggil (percobaanKe) saat mencoba lagi, untuk tampilan tombol
+
+async function kirimSekali(body, detik) {
   const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const h = ctl ? setTimeout(() => ctl.abort(), BATAS_DETIK * 1000) : 0;
-  let r;
+  const h = ctl ? setTimeout(() => ctl.abort(), detik * 1000) : 0;
   try {
-    r = await fetch(API_URL, {
+    const r = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
       signal: ctl ? ctl.signal : undefined
     });
+    if (!r.ok) {
+      const er = new Error('Server tidak merespons (' + r.status + ').');
+      er.ulang = r.status >= 500;
+      throw er;
+    }
+    try {
+      return await r.json();
+    } catch (e) {
+      const er = new Error('Jawaban server tidak terbaca. Coba lagi.');
+      er.ulang = true;
+      throw er;
+    }
   } catch (e) {
     if (e && e.name === 'AbortError') {
-      throw new Error('Server Google tidak menjawab dalam ' + Math.round(BATAS_DETIK / 60) + ' menit. Buka Apps Script, menu Eksekusi, untuk melihat penyebabnya.');
+      const er = new Error('Server Google tidak menjawab dalam ' + detik + ' detik.');
+      er.ulang = true;
+      throw er;
     }
+    if (e && e.name === 'TypeError') e.ulang = true; // koneksi putus
     throw e;
   } finally {
     clearTimeout(h);
   }
-  if (!r.ok) throw new Error('Server tidak merespons (' + r.status + ').');
-  const j = await r.json();
+}
+
+async function api(payload, tanpaToken) {
+  const body = tanpaToken ? payload : Object.assign({ token: TOKEN }, payload);
+  const baca = BACA_SAJA.indexOf(payload.action) >= 0;
+  const kali = baca ? COBA_BACA : 1;
+  let j, salah;
+  for (let i = 1; i <= kali; i++) {
+    try {
+      if (i > 1 && onCobaLagi) onCobaLagi(i);
+      j = await kirimSekali(body, baca ? TUNGGU_BACA : TUNGGU_TULIS);
+      salah = null;
+      break;
+    } catch (e) {
+      salah = e;
+      if (!e.ulang || i === kali) break;
+      await new Promise(ok => setTimeout(ok, 1500));
+    }
+  }
+  if (salah) {
+    if (salah.ulang && baca) {
+      salah.message = 'Server Google tidak menjawab setelah ' + kali + ' kali dicoba. Tunggu 1–2 menit lalu coba lagi.';
+    }
+    throw salah;
+  }
   if (!j.ok) {
     const er = new Error(j.message || 'Terjadi kesalahan.');
     er.code = j.code;
@@ -358,7 +401,9 @@ $('fl').addEventListener('submit', async ev => {
   // Tampilkan tahap dan lama menunggu, supaya terlihat bagian mana yang lambat.
   let tahap = 'Memeriksa password';
   const mulaiJam = Date.now();
-  const tulis = () => { b.textContent = tahap + '… ' + Math.round((Date.now() - mulaiJam) / 1000) + ' dtk'; };
+  let coba = 1;
+  const tulis = () => { b.textContent = tahap + (coba > 1 ? ' (percobaan ' + coba + ')' : '') + '… ' + Math.round((Date.now() - mulaiJam) / 1000) + ' dtk'; };
+  onCobaLagi = n => { coba = n; tulis(); };
   tulis();
   const jam = setInterval(tulis, 1000);
   try {
@@ -380,6 +425,7 @@ $('fl').addEventListener('submit', async ev => {
     showErr('errL', pesanError(e));
   } finally {
     clearInterval(jam);
+    onCobaLagi = null;
     b.disabled = false;
     b.textContent = 'Masuk';
   }
