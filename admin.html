@@ -231,6 +231,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ====== PENGATURAN ======
 // Samakan dengan API_URL di index.html (URL Web App Apps Script, berakhiran /exec)
@@ -345,7 +346,6 @@ $('fl').addEventListener('submit', async ev => {
     TOKEN = j.token;
     try { sessionStorage.setItem('adminToken', TOKEN); } catch (e) { /* abaikan */ }
     $('pass').value = '';
-    b.textContent = 'Memuat data pesanan…';
     await muat();
   } catch (e) {
     showErr('errL', pesanError(e));
@@ -997,42 +997,9 @@ $('rwCari').addEventListener('input', () => { if (DATA) renderRiwayat(); });
 $('fCari').addEventListener('input', render);
 
 /* ---------- Unduh rekap ke Excel ---------- */
-// Pustaka Excel (xlsx-js-style, mendukung warna sel) baru dimuat saat tombol Unduh Excel ditekan,
-// supaya membuka dan login admin tidak menunggu unduhan ~400 KB.
-const XLSX_URL = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
-let xlsxJanji = null;
-function muatXlsx() {
-  if (typeof XLSX !== 'undefined') return Promise.resolve();
-  if (!xlsxJanji) {
-    xlsxJanji = new Promise((ok, gagal) => {
-      const sc = document.createElement('script');
-      sc.src = XLSX_URL;
-      sc.onload = ok;
-      sc.onerror = () => { xlsxJanji = null; sc.remove(); gagal(new Error('Pustaka Excel gagal dimuat. Periksa internet lalu coba lagi.')); };
-      document.head.appendChild(sc);
-    });
-  }
-  return xlsxJanji;
-}
-
-async function klikExcel() {
-  if (!DATA) return;
-  const b = $('btnExcel');
-  b.disabled = true;
-  b.textContent = 'Menyiapkan…';
-  try {
-    await muatXlsx();
-    unduhExcel();
-  } catch (e) {
-    showErr('errP', pesanError(e));
-  } finally {
-    b.disabled = false;
-    b.textContent = 'Unduh Excel';
-  }
-}
-
 function unduhExcel() {
   if (!DATA) return;
+  if (typeof XLSX === 'undefined') return showErr('errP', 'Pustaka Excel gagal dimuat. Periksa internet lalu muat ulang halaman.');
 
   const ps = DATA.pesanan.slice().sort((a, b) => a.id.localeCompare(b.id));
   const byId = {};
@@ -1042,18 +1009,10 @@ function unduhExcel() {
   const statusTeks = p => sudahBayar(p) ? 'Sudah bayar' : 'Belum bayar';
 
   // 1. Semua pesanan (termasuk Dobel/Batal, ditandai di kolom Verifikasi)
-  //    Baris jingga = nama ganda (nama sama punya >1 pesanan aktif); baris abu-abu = Dobel/Batal.
   const sPesanan = [['ID', 'Waktu', 'Kelas', 'Nama Murid / PTK', 'Orang Tua/Wali', 'No. HP', 'Rincian', 'Jumlah Kaos',
-    'Total (Rp)', 'Status Bayar', 'Metode Bayar', 'Waktu Bayar/Bukti', 'Link Bukti', 'Verifikasi', 'Catatan', 'Nama Ganda']];
-  const jenisBaris = [null]; // 'ganda' | 'dobel' | null, sejajar dengan sPesanan
-  ps.forEach(p => {
-    const ket = p.ganda
-      ? 'Ganda dengan ' + p.gandaDengan.join(', ') + (p.gandaSama ? ' (rincian sama persis)' : '')
-      : '';
-    sPesanan.push([p.id, p.waktu, p.kelas, p.murid, p.ortu, p.hp, p.rincian, p.jumlah, p.total,
-      statusTeks(p), metodeTeks(p), p.waktuBukti, p.bukti, p.verif || 'Belum diperiksa', p.catatan, ket]);
-    jenisBaris.push(p.verif === DOBEL ? 'dobel' : (p.ganda ? 'ganda' : null));
-  });
+    'Total (Rp)', 'Status Bayar', 'Metode Bayar', 'Waktu Bayar/Bukti', 'Link Bukti', 'Verifikasi', 'Catatan']];
+  ps.forEach(p => sPesanan.push([p.id, p.waktu, p.kelas, p.murid, p.ortu, p.hp, p.rincian, p.jumlah, p.total,
+    statusTeks(p), metodeTeks(p), p.waktuBukti, p.bukti, p.verif || 'Belum diperiksa', p.catatan]));
 
   // 2. Rekap ukuran x lengan, murid dan PTK terpisah (tanpa Dobel/Batal)
   const kosong = () => { const o = {}; UKURAN.forEach(u => { o[u] = { 'Lengan pendek': 0, 'Lengan panjang': 0 }; }); return o; };
@@ -1115,31 +1074,13 @@ function unduhExcel() {
   PTK_BELUM.forEach((n, i) => sBelum.push([i + 1, n]));
 
   const wb = XLSX.utils.book_new();
-  const GARIS = { style: 'thin', color: { rgb: 'D5DDD8' } };
-  const TEPI = { top: GARIS, bottom: GARIS, left: GARIS, right: GARIS };
-  const GAYA = {
-    judul: { font: { bold: true, color: { rgb: '165C3A' } }, fill: { fgColor: { rgb: 'E8F3EC' } }, border: TEPI },
-    total: { font: { bold: true }, fill: { fgColor: { rgb: 'F7FAF8' } }, border: TEPI },
-    ganda: { fill: { fgColor: { rgb: 'FFD9B0' } }, border: TEPI },
-    dobel: { font: { color: { rgb: '8A8A8A' }, strike: true }, fill: { fgColor: { rgb: 'EEEEEE' } }, border: TEPI },
-    biasa: { border: TEPI }
-  };
-  // warnaiBaris(r) -> nama gaya untuk baris data ke-r (opsional)
-  const tambah = (rows, nama, lebar, warnaiBaris) => {
+  const tambah = (rows, nama, lebar) => {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = lebar.map(w => ({ wch: w }));
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(rows.length - 1, 0), c: rows[0].length - 1 } }) };
-    for (let r = 0; r < rows.length; r++) {
-      let g = r === 0 ? 'judul' : (rows[r][0] === 'TOTAL' ? 'total' : ((warnaiBaris && warnaiBaris(r)) || 'biasa'));
-      for (let c = 0; c < rows[0].length; c++) {
-        const ref = XLSX.utils.encode_cell({ r: r, c: c });
-        if (!ws[ref]) ws[ref] = { t: 's', v: '' };
-        ws[ref].s = GAYA[g];
-      }
-    }
     XLSX.utils.book_append_sheet(wb, ws, nama);
   };
-  tambah(sPesanan, 'Semua Pesanan', [8, 17, 8, 32, 24, 15, 34, 7, 11, 12, 18, 17, 30, 15, 30, 34], r => jenisBaris[r]);
+  tambah(sPesanan, 'Semua Pesanan', [8, 17, 8, 32, 24, 15, 34, 7, 11, 12, 18, 17, 30, 15, 30]);
   tambah(sUkuran, 'Rekap Ukuran', [8, 14, 15, 13, 14, 13, 14, 8]);
   tambah(sKelas, 'Rekap Kelas', [10, 9].concat(UKURAN.map(() => 6), [10, 12, 15, 15]));
   tambah(sPtk, 'PTK', [5, 36, 8, 8, 14, 7, 13, 17, 18, 12, 15, 30]);
@@ -1157,7 +1098,7 @@ function unduhExcel() {
   XLSX.writeFile(wb, nama);
   toast('Excel diunduh');
 }
-$('btnExcel').addEventListener('click', klikExcel);
+$('btnExcel').addEventListener('click', unduhExcel);
 
 /* ---------- Mulai ---------- */
 (async function mulai() {
