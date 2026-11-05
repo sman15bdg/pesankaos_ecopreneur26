@@ -64,6 +64,25 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 .gnote{font-size:.78rem;color:#8a3b00;margin-top:4px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1c2420;color:#fff;border-radius:10px;padding:10px 16px;font-weight:600;z-index:10}
 .empty{color:var(--muted);padding:12px 0}
+/* Edit pesanan */
+.lnk{background:none;border:0;padding:0;color:var(--g-dark);font-weight:700;text-decoration:underline;font-size:.82rem}
+.aksi{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.aksi .btn{padding:4px 10px;font-size:.8rem}
+.modal{position:fixed;inset:0;background:rgba(20,28,24,.5);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto;z-index:20}
+.modal .box{background:#fff;border-radius:14px;max-width:560px;width:100%;padding:18px;margin:auto 0;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.modal h2{margin-bottom:2px}
+.erow{display:grid;grid-template-columns:1fr 1.4fr 72px auto;gap:8px;align-items:end;margin-bottom:8px}
+.erow label{display:flex;flex-direction:column;gap:2px;min-width:0}
+.erow select,.erow input{padding:8px;font-size:15px;width:100%}
+#tRiwayat table{min-width:820px}
+.erow .rm{background:none;border:0;color:var(--err);font-weight:700;padding:8px 4px}
+.etot{display:flex;justify-content:space-between;background:var(--g-soft);border-radius:10px;padding:10px 12px;margin:10px 0;font-weight:700}
+.warn{background:var(--amber);border:1px solid var(--amber-line);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:.88rem;color:#6b3a00}
+.mbtn{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.rw{border-left:3px solid var(--g);padding:6px 0 6px 10px;margin:8px 0}
+.rw .w{font-size:.78rem;color:var(--muted)}
+.rw .ch{font-size:.9rem}
+@media (max-width:480px){.erow{grid-template-columns:1fr 1fr;padding-bottom:8px;border-bottom:1px dashed var(--line)}.erow .rm{text-align:left;align-self:end}}
 </style>
 </head>
 <body>
@@ -177,10 +196,40 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
     <p class="muted small">Baris berlatar jingga = kemungkinan input ganda (murid/PTK yang sama memiliki lebih dari satu pesanan). Pilih <b>Dobel/Batal</b> pada pesanan yang tidak dipakai agar tidak dihitung di rekap. Pesanan dengan status Dobel/Batal tidak bisa menerima bukti bayar lagi. Untuk pembayaran tunai ke Belladina atau lewat koperasi, tekan <b>Tandai lunas</b> setelah uang diterima.</p>
     <div class="scroll"><table class="list" id="tList"></table></div>
   </section>
+
+  <section class="card">
+    <h2>Riwayat perubahan <span class="muted small" id="jmlRiwayat"></span></h2>
+    <p class="muted small">Semua perubahan yang dilakukan dari halaman admin (edit pesanan, verifikasi, tandai lunas), terbaru di atas. Tersimpan permanen di sheet RIWAYAT.</p>
+    <label class="field" style="max-width:360px"><span>Cari (ID, nama, alasan)</span><input id="rwCari" type="search" autocomplete="off"></label>
+    <div class="scroll" id="tRiwayat"></div>
+  </section>
 </div>
 
 </div>
 <div id="toast" class="toast" hidden></div>
+
+<!-- Jendela edit pesanan / lihat riwayat -->
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mJudul">
+  <div class="box">
+    <h2 id="mJudul"></h2>
+    <p class="muted small" id="mSub"></p>
+    <div id="mEdit">
+      <div id="mItems"></div>
+      <button type="button" id="mTambah" class="btn" style="width:100%;border-style:dashed">+ Tambah baris</button>
+      <div class="etot"><span>Total baru (<span id="mQty">0</span> pcs)</span><span id="mTotal">Rp0</span></div>
+      <div id="mWarn" class="warn" hidden></div>
+      <label class="field"><span>Alasan perubahan <span style="color:var(--err)">*</span></span>
+        <input id="mAlasan" type="text" maxlength="200" placeholder="Contoh: minta tukar ukuran L ke XL lewat WA" autocomplete="off">
+      </label>
+      <div id="mErr" class="err" role="alert" hidden></div>
+    </div>
+    <div id="mRiwayat"></div>
+    <div class="mbtn">
+      <button type="button" id="mTutup" class="btn">Tutup</button>
+      <button type="button" id="mSimpan" class="btn solid">Simpan perubahan</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -192,6 +241,8 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyCl0OBww0dFeb1SoA33V6I
 const UKURAN = ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL']; // XXXL dan 4XL hanya dari formulir PTK
 const LENGAN = ['Lengan pendek', 'Lengan panjang'];
 const DOBEL = 'Dobel/Batal';
+const HARGA = { 'Lengan pendek': 100000, 'Lengan panjang': 110000 }; // samakan dengan Code.gs
+const UKURAN_MURID = ['S', 'M', 'L', 'XL', 'XXL'];
 const KELAS_PTK = 'PTK'; // samakan dengan KELAS_PTK di Code.gs
 const F_MURID = '__murid'; // nilai filter: semua kelas murid, tanpa PTK
 
@@ -389,6 +440,7 @@ function render() {
   renderKelasUkuran(hitungSemuaKelas, idSemuaKelas, byId);
   renderDaftar(f);
   renderPtk();
+  renderRiwayat();
 }
 
 /* ---------- PTK belum memesan ---------- */
@@ -653,7 +705,7 @@ function renderDaftar(f) {
       p.id + '\n' + p.waktu.slice(0, 16),
       el('span', null, [el('b', { text: p.murid }), el('br'), p.kelas]),
       el('span', null, [p.ortu, el('br'), p.hp]),
-      p.rincian + '  (' + p.jumlah + ' pcs)',
+      kolomPesanan(p),
       rp(p.total),
       badgeBayar(p),
       linkBukti(p),
@@ -760,6 +812,187 @@ function catatan(p) {
   return box;
 }
 
+/* ---------- Edit pesanan & riwayat ---------- */
+const riwayatId = id => (DATA.riwayat || []).filter(r => r.id === id);
+let EDIT = null; // pesanan yang sedang diedit
+
+function kolomPesanan(p) {
+  const box = el('div', null, [p.rincian + '  (' + p.jumlah + ' pcs)']);
+  const aksi = el('div', { class: 'aksi' });
+  if (p.verif !== DOBEL) {
+    const b = el('button', { type: 'button', class: 'btn', text: 'Edit' });
+    b.addEventListener('click', () => bukaEdit(p));
+    aksi.appendChild(b);
+  }
+  const rw = riwayatId(p.id).filter(r => r.jenis === 'Edit pesanan');
+  const semua = riwayatId(p.id);
+  if (semua.length) {
+    const l = el('button', { type: 'button', class: 'lnk', text: (rw.length ? '✎ diedit ' + rw.length + 'x' : 'Riwayat') + ' · lihat riwayat' });
+    l.addEventListener('click', () => bukaRiwayat(p));
+    aksi.appendChild(l);
+  }
+  if (aksi.childNodes.length) box.appendChild(aksi);
+  return box;
+}
+
+function rwItem(r) {
+  const tot = r.totalLama != null && r.totalBaru != null && r.totalLama !== r.totalBaru
+    ? ' (' + rp(r.totalLama) + ' → ' + rp(r.totalBaru) + ')' : '';
+  return el('div', { class: 'rw' }, [
+    el('div', { class: 'w', text: r.waktu.slice(0, 16) + ' · ' + r.jenis }),
+    el('div', { class: 'ch' }, [el('s', { text: r.sebelum || '—' }), ' → ', el('b', { text: r.sesudah || '—' }), tot]),
+    r.alasan ? el('div', { class: 'small muted', text: 'Alasan: ' + r.alasan }) : null
+  ]);
+}
+
+function tampilModal(judul, sub, modeEdit) {
+  $('mJudul').textContent = judul;
+  $('mSub').textContent = sub;
+  $('mEdit').hidden = !modeEdit;
+  $('mSimpan').hidden = !modeEdit;
+  $('mErr').hidden = true;
+  $('modal').hidden = false;
+}
+function tutupModal() { $('modal').hidden = true; EDIT = null; }
+$('mTutup').addEventListener('click', tutupModal);
+$('modal').addEventListener('click', ev => { if (ev.target === $('modal')) tutupModal(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('modal').hidden) tutupModal(); });
+
+function isiRiwayatModal(p) {
+  const box = $('mRiwayat');
+  box.innerHTML = '';
+  const rs = riwayatId(p.id);
+  if (!rs.length) return;
+  box.appendChild(el('h3', { text: 'Riwayat ' + p.id, style: 'margin:14px 0 4px;font-size:.95rem' }));
+  rs.forEach(r => box.appendChild(rwItem(r)));
+}
+
+function bukaRiwayat(p) {
+  tampilModal('Riwayat ' + p.id, p.murid + ' · ' + p.kelas + ' · sekarang: ' + p.rincian, false);
+  isiRiwayatModal(p);
+  $('mRiwayat').firstChild && $('mRiwayat').firstChild.remove(); // judul sudah di atas
+}
+
+function opsi(sel, list, val) {
+  sel.innerHTML = '';
+  list.forEach(v => sel.appendChild(el('option', { value: v, text: v })));
+  sel.value = val;
+}
+
+function barisEdit(it) {
+  const uk = EDIT.kelas === KELAS_PTK ? UKURAN : UKURAN_MURID;
+  const d = el('div', { class: 'erow' });
+  const u = el('select', { class: 'u', 'aria-label': 'Ukuran' });
+  const l = el('select', { class: 'l', 'aria-label': 'Lengan' });
+  const q = el('input', { class: 'q', type: 'number', min: '1', max: '20', value: String(it.jumlah), inputmode: 'numeric', 'aria-label': 'Jumlah' });
+  opsi(u, uk, it.ukuran);
+  opsi(l, LENGAN, it.lengan);
+  const rm = el('button', { type: 'button', class: 'rm', text: 'Hapus' });
+  rm.addEventListener('click', () => { d.remove(); hitungEdit(); });
+  [u, l, q].forEach(x => x.addEventListener('input', hitungEdit));
+  d.appendChild(el('label', null, [el('span', { class: 'small muted', text: 'Ukuran' }), u]));
+  d.appendChild(el('label', null, [el('span', { class: 'small muted', text: 'Lengan' }), l]));
+  d.appendChild(el('label', null, [el('span', { class: 'small muted', text: 'Jumlah' }), q]));
+  d.appendChild(rm);
+  $('mItems').appendChild(d);
+}
+
+function bacaEdit() {
+  return Array.from($('mItems').querySelectorAll('.erow')).map(d => ({
+    ukuran: d.querySelector('.u').value,
+    lengan: d.querySelector('.l').value,
+    jumlah: parseInt(d.querySelector('.q').value, 10) || 0
+  }));
+}
+
+function hitungEdit() {
+  const items = bacaEdit();
+  let t = 0, n = 0;
+  items.forEach(i => { if (i.jumlah > 0) { t += (HARGA[i.lengan] || 0) * i.jumlah; n += i.jumlah; } });
+  $('mTotal').textContent = rp(t);
+  $('mQty').textContent = n;
+  const rows = $('mItems').querySelectorAll('.erow');
+  rows.forEach(r => { r.querySelector('.rm').hidden = rows.length === 1; });
+  $('mTambah').hidden = rows.length >= 10;
+  const w = $('mWarn');
+  const selisih = t - EDIT.total;
+  if (sudahBayar(EDIT) && selisih) {
+    w.textContent = 'Pesanan ini sudah dibayar ' + rp(EDIT.total) + '. Setelah diedit, pemesan ' +
+      (selisih > 0 ? 'KURANG BAYAR ' + rp(selisih) : 'LEBIH BAYAR ' + rp(-selisih)) + '. Selisih akan dicatat di kolom Catatan.';
+    w.hidden = false;
+  } else if (selisih) {
+    w.textContent = 'Total berubah dari ' + rp(EDIT.total) + ' menjadi ' + rp(t) + '.';
+    w.hidden = false;
+  } else {
+    w.hidden = true;
+  }
+}
+
+function bukaEdit(p) {
+  EDIT = p;
+  tampilModal('Edit pesanan ' + p.id, p.murid + ' · ' + p.kelas + ' · ' + statusTeksBayar(p), true);
+  $('mItems').innerHTML = '';
+  const its = DATA.rincian.filter(r => r.id === p.id);
+  (its.length ? its : [{ ukuran: 'L', lengan: 'Lengan pendek', jumlah: 1 }]).forEach(barisEdit);
+  $('mAlasan').value = '';
+  hitungEdit();
+  isiRiwayatModal(p);
+  $('mItems').querySelector('select').focus();
+}
+const statusTeksBayar = p => sudahBayar(p) ? 'sudah bayar' + (p.metode ? ' (' + p.metode + ')' : '') : 'belum bayar';
+
+$('mAlasan').addEventListener('input', () => { $('mErr').hidden = true; });
+$('mTambah').addEventListener('click', () => { barisEdit({ ukuran: 'L', lengan: 'Lengan pendek', jumlah: 1 }); hitungEdit(); });
+
+$('mSimpan').addEventListener('click', async () => {
+  if (!EDIT) return;
+  const p = EDIT;
+  const items = bacaEdit();
+  const alasan = $('mAlasan').value.trim();
+  const err = m => { $('mErr').textContent = m; $('mErr').hidden = false; };
+  $('mErr').hidden = true;
+  if (items.some(i => !(i.jumlah >= 1 && i.jumlah <= 20))) return err('Jumlah tiap baris harus 1 sampai 20.');
+  const baru = items.map(i => i.ukuran + ' ' + i.lengan + ' x' + i.jumlah).join('; ');
+  if (baru === p.rincian) return err('Belum ada yang diubah.');
+  if (alasan.length < 3) { $('mAlasan').focus(); return err('Isi alasan perubahan.'); }
+  const b = $('mSimpan');
+  b.disabled = true;
+  b.textContent = 'Menyimpan…';
+  try {
+    const j = await api({ action: 'admin_edit', id: p.id, items: items, alasan: alasan });
+    tutupModal();
+    toast(p.id + ' diperbarui' + (j.selisih ? (j.selisih > 0 ? ' · kurang bayar ' + rp(j.selisih) : ' · lebih bayar ' + rp(-j.selisih)) : ''));
+    await muat();
+  } catch (e) {
+    if (e && e.code === 'sesi') { tutupModal(); return tampilLogin(e.message); }
+    err(pesanError(e));
+  } finally {
+    b.disabled = false;
+    b.textContent = 'Simpan perubahan';
+  }
+});
+
+function renderRiwayat() {
+  const all = DATA.riwayat || [];
+  const q = $('rwCari').value.trim().toLowerCase();
+  const rs = all.filter(r => !q || (r.id + ' ' + r.nama + ' ' + r.alasan + ' ' + r.jenis + ' ' + r.kelas).toLowerCase().indexOf(q) >= 0);
+  $('jmlRiwayat').textContent = '(' + all.length + ' perubahan)';
+  const box = $('tRiwayat');
+  if (!rs.length) {
+    box.innerHTML = '';
+    box.appendChild(el('div', { class: 'empty', text: all.length ? 'Tidak ada yang cocok.' : 'Belum ada perubahan.' }));
+    return;
+  }
+  tabel(box,
+    [{ t: 'Waktu' }, { t: 'ID' }, { t: 'Nama' }, { t: 'Perubahan' }, { t: 'Sebelum' }, { t: 'Sesudah' }, { t: 'Total', n: 1 }, { t: 'Alasan' }],
+    rs.map(r => ({ c: [
+      r.waktu.slice(0, 16), r.id, r.nama + ' (' + r.kelas + ')', r.jenis, r.sebelum, r.sesudah,
+      r.totalLama != null && r.totalBaru != null && r.totalLama !== r.totalBaru ? rp(r.totalLama) + ' → ' + rp(r.totalBaru) : '',
+      r.alasan
+    ] })));
+}
+$('rwCari').addEventListener('input', () => { if (DATA) renderRiwayat(); });
+
 ['fKelas', 'fBayar', 'fGanda', 'fDobel'].forEach(id => $(id).addEventListener('change', render));
 $('fCari').addEventListener('input', render);
 
@@ -852,6 +1085,12 @@ function unduhExcel() {
   tambah(sKelas, 'Rekap Kelas', [10, 9].concat(UKURAN.map(() => 6), [10, 12, 15, 15]));
   tambah(sPtk, 'PTK', [5, 36, 8, 8, 14, 7, 13, 17, 18, 12, 15, 30]);
   tambah(sBelum, 'PTK Belum Memesan', [5, 40]);
+
+  // 6. Riwayat perubahan
+  const sRw = [['Waktu', 'ID', 'Kelas', 'Nama', 'Jenis Perubahan', 'Sebelum', 'Sesudah', 'Total Sebelum (Rp)', 'Total Sesudah (Rp)', 'Alasan']];
+  (DATA.riwayat || []).forEach(r => sRw.push([r.waktu, r.id, r.kelas, r.nama, r.jenis, r.sebelum, r.sesudah,
+    r.totalLama == null ? '' : r.totalLama, r.totalBaru == null ? '' : r.totalBaru, r.alasan]));
+  tambah(sRw, 'Riwayat Perubahan', [17, 8, 8, 30, 15, 34, 34, 14, 14, 36]);
 
   const d = new Date();
   const z = n => String(n).padStart(2, '0');
