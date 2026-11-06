@@ -34,6 +34,8 @@ select:focus,input:focus{outline:2px solid var(--g);outline-offset:1px;border-co
 .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
 .stat .l{color:var(--muted);font-size:.8rem}
 .stat .v{font-size:1.3rem;font-weight:800;color:var(--g-dark);overflow-wrap:anywhere}
+.stat.ok{background:var(--g-soft);border-color:var(--g)}
+.stat.ok .v{color:var(--g-dark)}
 .stat.warn{background:var(--amber);border-color:var(--amber-line)}
 .stat.warn .v{color:#8a4b00}
 .stat button{margin-top:6px;padding:4px 10px;font-size:.8rem}
@@ -92,7 +94,7 @@ tr.dobel td:last-child,tr.dobel td.keep{text-decoration:none;opacity:1}
 <section id="login" class="card">
   <h1 style="font-size:1.25rem">Admin Rekap Kaos</h1>
   <p class="muted">EcoPreneur TechFest 2026. Khusus panitia.</p>
-  <p class="small muted" style="margin-top:-4px">Versi halaman: 5 Nov 2026, 18.00</p>
+  <p class="small muted" style="margin-top:-4px">Versi halaman: 6 Nov 2026</p>
   <form id="fl" novalidate>
     <label class="field"><span>Password</span>
       <input id="pass" type="password" autocomplete="current-password" autofocus>
@@ -588,7 +590,8 @@ function renderPtk() {
   const box = $('ptkStats');
   box.innerHTML = '';
   [['Pemesan', nf(orang) + ' orang'], ['Pesanan', nf(ps.length)], ['Total kaos', nf(pcs) + ' pcs'],
-   ['Total nilai', rp(tot)], ['Sudah dibayar', rp(lunas)], ['Belum dibayar', rp(tot - lunas)]]
+   ['Total nilai', rp(tot)], ['Sudah dibayar', rp(lunas)],
+   ['Terverifikasi', rp(jumlahRp(ps.filter(p => sudahBayar(p) && terverif(p))))], ['Belum dibayar', rp(tot - lunas)]]
     .forEach(k => box.appendChild(el('div', { class: 'stat' }, [el('div', { class: 'l', text: k[0] }), el('div', { class: 'v', text: k[1] })])));
 
   if (!ps.length) {
@@ -657,7 +660,7 @@ function renderStats(ps) {
 
   const box = $('stats');
   box.innerHTML = '';
-  const kartu = (l, v, extra) => el('div', { class: 'stat' + (extra && extra.warn ? ' warn' : '') }, [
+  const kartu = (l, v, extra) => el('div', { class: 'stat' + (extra && extra.warn ? ' warn' : '') + (extra && extra.ok ? ' ok' : '') }, [
     el('div', { class: 'l', text: l }),
     el('div', { class: 'v', text: v }),
     extra && extra.btn ? extra.btn : null
@@ -667,6 +670,19 @@ function renderStats(ps) {
   box.appendChild(kartu('Total nilai', rp(tot)));
   box.appendChild(kartu('Sudah dibayar', rp(lunas)));
   box.appendChild(kartu('Belum dibayar', rp(tot - lunas)));
+  // Uang yang sudah dicek panitia (Verifikasi = Terverifikasi)
+  const ver = ps.filter(terverif);
+  const verLunas = ver.filter(sudahBayar);
+  const belumCek = ps.filter(p => sudahBayar(p) && !terverif(p));
+  box.appendChild(kartu('Terverifikasi (' + nf(verLunas.length) + ' pesanan)', rp(jumlahRp(verLunas)), { ok: true }));
+  box.appendChild(kartu('Sudah bayar, belum diverifikasi (' + nf(belumCek.length) + ')', rp(jumlahRp(belumCek))));
+  const aneh = ver.filter(p => !sudahBayar(p));
+  if (aneh.length) {
+    // Terverifikasi tetapi belum ada pembayaran tercatat: tidak ikut dihitung, perlu dicek panitia.
+    const ids = aneh.map(p => p.id);
+    const info = el('div', { class: 'small', text: 'Tidak dihitung. Cek: ' + ids.slice(0, 8).join(', ') + (ids.length > 8 ? ', …' : '') });
+    box.appendChild(kartu('Terverifikasi tapi status belum bayar', nf(aneh.length) + ' pesanan · ' + rp(jumlahRp(aneh)), { warn: true, btn: info }));
+  }
   if (grupGanda > 0) {
     const b = el('button', { type: 'button', class: 'btn', text: 'Lihat' });
     b.addEventListener('click', () => {
@@ -701,10 +717,11 @@ function renderJenis(idHitung) {
 }
 
 function renderBayar(ps) {
-  const grup = { sudah: { n: 0, pcs: 0, rp: 0, sus: 0, tun: 0 }, belum: { n: 0, pcs: 0, rp: 0, sus: 0, tun: 0 } };
+  const grup = { sudah: { n: 0, pcs: 0, rp: 0, sus: 0, tun: 0, vn: 0, vrp: 0 }, belum: { n: 0, pcs: 0, rp: 0, sus: 0, tun: 0, vn: 0, vrp: 0 } };
   ps.forEach(p => {
     const g = grup[sudahBayar(p) ? 'sudah' : 'belum'];
     g.n++; g.pcs += p.jumlah; g.rp += p.total;
+    if (terverif(p)) { g.vn++; g.vrp += p.total; }
     if (sudahBayar(p) && tunai(p)) g.tun++;
     else if (sudahBayar(p) && p.susulan) g.sus++;
   });
@@ -716,6 +733,8 @@ function renderBayar(ps) {
       { c: ['↳ langsung saat memesan', lang, '', ''] },
       { c: ['↳ bukti diunggah susulan', grup.sudah.sus, '', ''] },
       { c: ['↳ tunai / koperasi (dicatat panitia)', grup.sudah.tun, '', ''] },
+      { c: [el('b', { text: '↳ sudah diverifikasi panitia' }), grup.sudah.vn, '', el('b', { text: rp(grup.sudah.vrp) })] },
+      { c: ['↳ belum diverifikasi', grup.sudah.n - grup.sudah.vn, '', rp(grup.sudah.rp - grup.sudah.vrp)] },
       { c: ['Belum membayar (menyusul)', grup.belum.n, grup.belum.pcs, rp(grup.belum.rp)] }
     ],
     ['Total', grup.sudah.n + grup.belum.n, grup.sudah.pcs + grup.belum.pcs, rp(grup.sudah.rp + grup.belum.rp)]);
@@ -724,19 +743,20 @@ function renderBayar(ps) {
 function renderKelas(ps) {
   const g = {};
   ps.forEach(p => {
-    const k = g[p.kelas] = g[p.kelas] || { n: 0, pcs: 0, tot: 0, lunas: 0 };
+    const k = g[p.kelas] = g[p.kelas] || { n: 0, pcs: 0, tot: 0, lunas: 0, ver: 0 };
     k.n++; k.pcs += p.jumlah; k.tot += p.total;
     if (sudahBayar(p)) k.lunas += p.total;
+    if (sudahBayar(p) && terverif(p)) k.ver += p.total;
   });
   const ks = Object.keys(g).sort(kelasCmp);
-  const S = { n: 0, pcs: 0, tot: 0, lunas: 0 };
+  const S = { n: 0, pcs: 0, tot: 0, lunas: 0, ver: 0 };
   const rows = ks.map(k => {
-    S.n += g[k].n; S.pcs += g[k].pcs; S.tot += g[k].tot; S.lunas += g[k].lunas;
-    return { c: [k, g[k].n, g[k].pcs, rp(g[k].tot), rp(g[k].lunas), rp(g[k].tot - g[k].lunas)] };
+    S.n += g[k].n; S.pcs += g[k].pcs; S.tot += g[k].tot; S.lunas += g[k].lunas; S.ver += g[k].ver;
+    return { c: [k, g[k].n, g[k].pcs, rp(g[k].tot), rp(g[k].lunas), rp(g[k].ver), rp(g[k].tot - g[k].lunas)] };
   });
-  const heads = [{ t: 'Kelas' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Total', n: 1 }, { t: 'Sudah bayar', n: 1 }, { t: 'Belum bayar', n: 1 }];
+  const heads = [{ t: 'Kelas' }, { t: 'Pesanan', n: 1 }, { t: 'Kaos', n: 1 }, { t: 'Total', n: 1 }, { t: 'Sudah bayar', n: 1 }, { t: 'Terverifikasi', n: 1 }, { t: 'Belum bayar', n: 1 }];
   if (!rows.length) { $('tKelas').innerHTML = ''; $('tKelas').appendChild(el('div', { class: 'empty', text: 'Belum ada pesanan.' })); return; }
-  tabel($('tKelas'), heads, rows, ['Total', S.n, S.pcs, rp(S.tot), rp(S.lunas), rp(S.tot - S.lunas)]);
+  tabel($('tKelas'), heads, rows, ['Total', S.n, S.pcs, rp(S.tot), rp(S.lunas), rp(S.ver), rp(S.tot - S.lunas)]);
 }
 
 function renderKelasUkuran(ps, idSet) {
@@ -810,6 +830,8 @@ function renderDaftar(f) {
 
 const METODE_TRANSFER = 'Transfer/QRIS';
 const tunai = p => !!p.metode && p.metode !== METODE_TRANSFER;
+const terverif = p => p.verif === 'Terverifikasi';
+const jumlahRp = list => list.reduce((a, p) => a + p.total, 0);
 const punyaBukti = p => !!p.bukti && p.bukti.indexOf('https://') === 0;
 
 function badgeBayar(p) {
@@ -1160,9 +1182,10 @@ function unduhExcel() {
   // 3. Rekap per kelas: ukuran + pembayaran (tanpa Dobel/Batal)
   const g = {};
   akt.forEach(p => {
-    const k = g[p.kelas] = g[p.kelas] || { n: 0, pcs: 0, tot: 0, lunas: 0, uk: {} };
+    const k = g[p.kelas] = g[p.kelas] || { n: 0, pcs: 0, tot: 0, lunas: 0, ver: 0, uk: {} };
     k.n++; k.pcs += p.jumlah; k.tot += p.total;
     if (sudahBayar(p)) k.lunas += p.total;
+    if (sudahBayar(p) && terverif(p)) k.ver += p.total;
   });
   DATA.rincian.forEach(r => {
     const p = byId[r.id];
@@ -1170,11 +1193,11 @@ function unduhExcel() {
     const k = g[p.kelas];
     k.uk[r.ukuran] = (k.uk[r.ukuran] || 0) + r.jumlah;
   });
-  const sKelas = [['Kelas', 'Pesanan'].concat(UKURAN, ['Total Kaos', 'Total (Rp)', 'Sudah Bayar (Rp)', 'Belum Bayar (Rp)'])];
-  const TK = new Array(UKURAN.length + 5).fill(0);
+  const sKelas = [['Kelas', 'Pesanan'].concat(UKURAN, ['Total Kaos', 'Total (Rp)', 'Sudah Bayar (Rp)', 'Terverifikasi (Rp)', 'Belum Bayar (Rp)'])];
+  const TK = new Array(UKURAN.length + 6).fill(0);
   Object.keys(g).sort(kelasCmp).forEach(k => {
     const x = g[k];
-    const row = [x.n].concat(UKURAN.map(u => x.uk[u] || 0), [x.pcs, x.tot, x.lunas, x.tot - x.lunas]);
+    const row = [x.n].concat(UKURAN.map(u => x.uk[u] || 0), [x.pcs, x.tot, x.lunas, x.ver, x.tot - x.lunas]);
     row.forEach((v, i) => { TK[i] += v; });
     sKelas.push([k].concat(row));
   });
@@ -1224,7 +1247,7 @@ function unduhExcel() {
   };
   tambah(sPesanan, 'Semua Pesanan', [8, 17, 8, 32, 24, 15, 34, 7, 11, 12, 18, 17, 30, 15, 30, 34], r => jenisBaris[r]);
   tambah(sUkuran, 'Rekap Ukuran', [8, 14, 15, 13, 14, 13, 14, 8]);
-  tambah(sKelas, 'Rekap Kelas', [10, 9].concat(UKURAN.map(() => 6), [10, 12, 15, 15]));
+  tambah(sKelas, 'Rekap Kelas', [10, 9].concat(UKURAN.map(() => 6), [10, 12, 15, 17, 15]));
   tambah(sPtk, 'PTK', [5, 36, 8, 8, 14, 7, 13, 17, 18, 12, 15, 30]);
   tambah(sBelum, 'PTK Belum Memesan', [5, 40]);
 
