@@ -344,6 +344,35 @@ document.addEventListener('click', async ev => {
   setTimeout(() => { b.textContent = 'Salin'; }, 2000);
 });
 
+/* ---------- Pemesanan ditutup (diatur dari Code.gs) ---------- */
+let TUTUP = false;
+let TEKS_TUTUP = '';
+function tampilTutup() {
+  $('f').hidden = true;
+  $('tabP').textContent = 'Pemesanan Ditutup';
+  if (!$('boxTutup')) {
+    const box = document.createElement('section');
+    box.id = 'boxTutup';
+    box.className = 'card done';
+    const ic = document.createElement('div');
+    ic.className = 'ok-icon';
+    ic.style.background = '#8a6d1f';
+    ic.textContent = '!';
+    const h = document.createElement('h2');
+    h.textContent = 'Pemesanan sudah ditutup';
+    const p = document.createElement('p');
+    p.className = 'muted';
+    p.textContent = TEKS_TUTUP;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'alt';
+    b.textContent = 'Unggah bukti bayar';
+    b.addEventListener('click', () => pilihTab('B'));
+    box.appendChild(ic); box.appendChild(h); box.appendChild(p); box.appendChild(b);
+    $('panelP').insertBefore(box, $('panelP').firstChild);
+  }
+}
+
 /* ---------- Gerbang kode akses ---------- */
 async function masuk(kode) {
   KODE = kode;
@@ -352,6 +381,7 @@ async function masuk(kode) {
   $('muat').hidden = true;
   $('gate').hidden = true;
   $('app').hidden = false;
+  if (TUTUP) tampilTutup();
   if (location.hash === '#bukti') pilihTab('B');
 }
 
@@ -387,6 +417,8 @@ async function mulai() {
   try {
     KODE = '';
     const s = await api({ action: 'status' });
+    TUTUP = s.muridDibuka === false;
+    TEKS_TUTUP = s.pesanTutup || 'Pemesanan sudah ditutup.';
     if (!s.kodeDiperlukan) { await masuk(''); return; }
     let k = '';
     try { k = sessionStorage.getItem('kodeAkses') || ''; } catch (e) { /* abaikan */ }
